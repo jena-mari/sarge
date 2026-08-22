@@ -5,17 +5,110 @@ import { BrowserRouter, Navigate, NavLink, Route, Routes, useNavigate } from 're
 import { ArrowRight, Building2, Check, ChevronLeft, Download, FileText, Home, Menu, Users, X, Zap } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useState, useSyncExternalStore } from 'react';
-import { energyHistory, rewards, user, calculateContribution, calculateSargeCredits } from '../src/data/mockEnergyData';
+import { defaultWeeklyDonationCap, demoVerification, energyHistory, user, calculateSargeCredits } from '../src/data/mockEnergyData';
 import CouncilDashboard from '../../council-frontend/app/CouncilDashboard';
 
 const Button = ({ children, variant = 'dark', className = '', ...props }) => <button className={`button button--${variant} ${className}`} {...props}>{children}</button>;
+const StepDots = ({ active, total = 5 }) => <div className="step-dots" aria-label={`Step ${active} of ${total}`}>{Array.from({length:total},(_,i)=><span key={i} className={i<active?'active':''}/>)}</div>;
 const heroAssets = {
   background: '/assets/figma/welcoming-bg.jpg',
-  mark: '/assets/figma/sarge-logo-figma.png',
+  mark: '/assets/figma/sarge-lightning-mark.png?v=clean-icon',
   divider: '/assets/figma/logo-divider-figma.svg',
   family: '/assets/figma/sarge-family-figma.png',
 };
 const donorPropertyTypes = [['Home',Home],['Apartment Building',Building2],['Business',Building2],['Council Property',Building2]];
+const donorTypeMap = {'Home':'household','Apartment Building':'apartment_building','Business':'business','Council Property':'council_property'};
+const wollongongSuburbs = [
+  'Austinmer',
+  'Avon',
+  'Avondale',
+  'Balgownie',
+  'Bellambi',
+  'Berkeley',
+  'Brownsville',
+  'Bulli',
+  'Cataract',
+  'Cleveland',
+  'Clifton',
+  'Coalcliff',
+  'Coledale',
+  'Coniston',
+  'Cordeaux',
+  'Cordeaux Heights',
+  'Corrimal',
+  'Cringila',
+  'Dapto',
+  'Darkes Forest',
+  'Dombarton',
+  'East Corrimal',
+  'Fairy Meadow',
+  'Farmborough Heights',
+  'Fernhill',
+  'Figtree',
+  'Gwynneville',
+  'Haywards Bay',
+  'Helensburgh',
+  'Horsley',
+  'Huntley',
+  'Kanahooka',
+  'Keiraville',
+  'Kembla Grange',
+  'Kembla Heights',
+  'Koonawarra',
+  'Lake Heights',
+  'Lilyvale',
+  'Maddens Plains',
+  'Mangerton',
+  'Marshall Mount',
+  'Mount Keira',
+  'Mount Kembla',
+  'Mount Ousley',
+  'Mount Pleasant',
+  'Mount St Thomas',
+  'North Wollongong',
+  'Otford',
+  'Penrose',
+  'Port Kembla',
+  'Primbee',
+  'Russell Vale',
+  'Scarborough',
+  'Spring Hill',
+  'Stanwell Park',
+  'Stanwell Tops',
+  'Tarrawanna',
+  'Thirroul',
+  'Towradgi',
+  'Unanderra',
+  'Warrawong',
+  'West Wollongong',
+  'Windang',
+  'Wollongong',
+  'Wombarra',
+  'Wongawilli',
+  'Woonona',
+  'Yallah',
+];
+const consentItems = [
+ ['located_in_wollongong_lga','Property is in the Wollongong Council area.'],
+ ['has_export_source','Property has rooftop solar, battery export, or another eligible export source.'],
+ ['has_verifiable_export_data','Export data can be verified through a smart meter, inverter, VPP, retailer report, or uploaded CSV.'],
+ ['export_data_consent','Contributor agrees SARGE can use export data to verify donated kWh.'],
+];
+const demoDataSourcePayload = {network:'Endeavour Energy',has_smart_meter:'yes',verification_method:'demo_smart_meter_data',uploaded_export_file_name:null,retailer:null,inverter_or_vpp_provider:null,verified_export_today:8.4,estimated_weekly_export:42};
+const retailerOptions = ['AGL','Origin Energy','EnergyAustralia','Red Energy','Alinta Energy','Simply Energy','Powershop','Other','Not sure'];
+const inverterOrVppProviderOptions = ['SolarEdge','Fronius','Enphase','Tesla','Sungrow','GoodWe','Growatt','SMA','Amber VPP','sonnen','Other','Not sure'];
+const dataSourceOptions = [
+ {id:'demo_smart_meter_data',title:'Use demo smart meter data',badge:'Recommended',description:'Creates sample verified export data for the prototype.',Icon:Check},
+ {id:'upload_csv',title:'Upload smart meter CSV',description:'Upload an export report from a smart meter or retailer.',Icon:FileText},
+ {id:'retailer_cdr',title:'Connect retailer / CDR later',description:'Choose your electricity retailer for a future consent-based connection.',Icon:Zap},
+ {id:'inverter_vpp',title:'Connect inverter or VPP later',description:'Choose your solar inverter, battery, or VPP provider.',Icon:Building2},
+];
+const sargeCreditUnlocks = ['20 credits = 1 hour council parking','100 credits = $5 leisure voucher','300 credits = green waste voucher','Recognition badges start from 50 credits'];
+const emptyConsent = consentItems.reduce((acc,[key])=>({...acc,[key]:false}),{});
+const readStoredJson = (key, fallback) => { if (typeof window === 'undefined') return fallback; try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } };
+const clampWeeklyCap = (value, max) => Math.min(Math.max(0, Number(value) || 0), max);
+const formatKwh = value => Number(value).toLocaleString(undefined,{maximumFractionDigits:1});
+const formatVerificationMethod = method => method === 'demo_smart_meter_data' ? 'Demo smart meter data' : String(method || 'demo_smart_meter_data').replace(/_/g,' ');
 
 function Logo() { return <NavLink className="logo" to="/overview" aria-label="Sarge home"><Zap size={24} fill="currentColor" strokeWidth={3}/><strong>Sarge</strong></NavLink>; }
 
@@ -48,24 +141,160 @@ function Overview() {
 }
 
 function Contribute() {
- const spare=12; const [mode,setMode]=useState('all'); const [custom,setCustom]=useState(12); const [done,setDone]=useState(false); const pledge=mode==='all'?12:mode==='half'?6:Number(custom)||0; const actual=calculateContribution(pledge,spare);
- const confirm=()=>{localStorage.setItem('sargeContribution',JSON.stringify({donor_id:'D001',donor_type:'household',suburb:'Dapto',generated_kwh:26,consumed_kwh:14,verified_spare_kwh:12,pledged_kwh:pledge,contributed_kwh:actual,sarge_credits_created:calculateSargeCredits(actual),verified:true}));setDone(true)};
- if(done) return <Shell title="12 kWh shared." eyebrow="Contribution confirmed"><div className="success-card"><div className="success-mark"><Check/></div><h2>{actual} Sarge Credits earned.</h2><p>Your contribution is now available to the Sarge community allocation system.</p><Button onClick={()=>setDone(false)}>Share again</Button></div></Shell>;
- return <Shell title="Share your spare solar" eyebrow="Contribute"><div className="contribute-layout"><section><div className="today-flow"><div><span>Generated</span><strong>26 kWh</strong></div><ArrowRight/><div><span>Used</span><strong>14 kWh</strong></div><ArrowRight/><div className="pink"><span>Spare</span><strong>12 kWh</strong></div></div><div className="availability"><Check/><p>You currently have <strong>12 kWh of verified spare solar</strong> available.</p></div></section><section className="pledge-card"><h2>How much would you like to share?</h2>{[['all','Donate all 12 kWh'],['half','Donate 50%'],['custom','Custom amount']].map(([id,label])=><label className={`choice ${mode===id?'selected':''}`} key={id}><input type="radio" name="pledge" checked={mode===id} onChange={()=>setMode(id)}/><span>{label}</span>{mode===id&&<Check/>}</label>)}{mode==='custom'&&<div className="slider-wrap"><label htmlFor="amount">Your pledge</label><input id="amount" type="range" min="0" max="24" step="1" value={custom} onChange={e=>setCustom(e.target.value)}/><div className="number-field"><input aria-label="Custom pledge amount" type="number" min="0" value={custom} onChange={e=>setCustom(e.target.value)}/><span>kWh</span></div></div>}{pledge>spare&&<p className="cap-note">You pledged up to {pledge} kWh. You currently have 12 kWh available, so your contribution will be capped at 12 kWh.</p>}<div className="calculation"><span>Your contribution</span><strong>{actual} kWh</strong><span>Sarge Credits earned</span><strong>{calculateSargeCredits(actual)}</strong></div><Button onClick={confirm} disabled={actual<=0}>Confirm contribution <ArrowRight size={18}/></Button></section></div></Shell>;
+ const nav=useNavigate();
+ const verification=readStoredJson('sargeVerification',{...demoVerification,home_battery:'Not sure',verified:true});
+ const draft=readStoredJson('sargeOnboardingDraft',{property:'Home',suburb:'Dapto',system_size_kw:6.6,donor_type:'household'});
+ const eligibilityConsent=readStoredJson('sargeEligibilityConsent',{...emptyConsent,consented_at:''});
+ const verifiedExportToday=Number(verification.verified_export_today ?? demoVerification.verified_export_today);
+ const estimatedWeeklyExport=Number(verification.estimated_weekly_export ?? demoVerification.estimated_weekly_export);
+ const homeBattery=verification.home_battery || 'Not sure';
+ const [weeklyCap,setWeeklyCap]=useState(Number(verification.weekly_donation_cap ?? defaultWeeklyDonationCap));
+ const [reserve,setReserve]=useState(homeBattery==='Yes');
+ const weeklyDonationCap=clampWeeklyCap(weeklyCap,estimatedWeeklyExport);
+ const creditsToday=Math.min(verifiedExportToday,weeklyDonationCap);
+ const weeklyCapRemainingAfterToday=Math.max(weeklyDonationCap-creditsToday,0);
+ const updateWeeklyCap=value=>setWeeklyCap(clampWeeklyCap(value,estimatedWeeklyExport));
+ const confirm=()=>{const payload={donor_id:'D001',donor_type:draft.donor_type || donorTypeMap[draft.property] || 'household',suburb:draft.suburb || 'Dapto',verified_export_today:verifiedExportToday,estimated_weekly_export:estimatedWeeklyExport,weekly_donation_cap:weeklyDonationCap,weekly_cap_remaining_after_today:weeklyCapRemainingAfterToday,remaining_weekly_cap:weeklyCapRemainingAfterToday,credits_created_today:creditsToday,pledged_kwh:weeklyDonationCap,verified_spare_kwh:verifiedExportToday,contributed_kwh:creditsToday,sarge_credits_created:calculateSargeCredits(creditsToday),verification_method:verification.verification_method || demoVerification.verification_method,home_battery:homeBattery,battery_reserve_required:homeBattery==='Yes'&&reserve,eligibility_consent:eligibilityConsent,status:'verified',verified:true};localStorage.setItem('sargeContribution',JSON.stringify(payload));localStorage.setItem('sargeVerification',JSON.stringify({...verification,weekly_donation_cap:weeklyDonationCap,weekly_cap_remaining_after_today:weeklyCapRemainingAfterToday}));nav('/confirm-donation')};
+ return <Shell title="Share your spare solar" eyebrow="Pledge"><div className="contribute-layout"><section><div className="today-flow"><div><span>Verified export today</span><strong>{formatKwh(verifiedExportToday)} kWh</strong></div><ArrowRight/><div><span>Weekly donation cap</span><strong>{formatKwh(weeklyDonationCap)} kWh</strong></div><ArrowRight/><div className="pink"><span>Today’s SARGE Credits</span><strong>{formatKwh(creditsToday)}</strong></div></div>{homeBattery==='Yes'&&<label className={`choice reserve-choice ${reserve?'selected':''}`}><input type="checkbox" checked={reserve} onChange={e=>setReserve(e.target.checked)}/><span>Only donate after battery reserve is met</span>{reserve&&<Check/>}</label>}</section><section className="pledge-card"><h2>Weekly donation cap</h2><div className="slider-wrap"><label htmlFor="weekly-cap">Maximum donated solar this week</label><input id="weekly-cap" type="range" min="0" max={estimatedWeeklyExport} step="1" value={weeklyDonationCap} onChange={e=>updateWeeklyCap(e.target.value)}/><div className="number-field"><input aria-label="Weekly donation cap" type="number" min="0" max={estimatedWeeklyExport} value={weeklyDonationCap} onChange={e=>updateWeeklyCap(e.target.value)}/><span>kWh</span></div></div><div className="calculation"><span>Estimated weekly export</span><strong>{formatKwh(estimatedWeeklyExport)} kWh</strong><span>Verified export today</span><strong>{formatKwh(verifiedExportToday)} kWh</strong><span>Weekly donation cap</span><strong>{formatKwh(weeklyDonationCap)} kWh</strong><span>Today’s SARGE Credits</span><strong>{formatKwh(creditsToday)}</strong><span>Weekly cap remaining after today</span><strong>{formatKwh(weeklyCapRemainingAfterToday)} kWh</strong></div><Button onClick={confirm} disabled={creditsToday<=0}>Review donation <ArrowRight size={18}/></Button></section></div></Shell>;
 }
 
-function Rewards() { return <Shell title="Your contribution deserves recognition." eyebrow="Rewards"><div className="rewards-head"><div><span>Current balance</span><strong>85</strong><p>Sarge Credits</p></div><p><strong>Proposed community rewards</strong><br/>Ideas for how Sarge Credits could recognise local contribution. These are concepts, not current Wollongong City Council programs.</p></div><div className="reward-grid">{rewards.map((r,i)=><article className={`reward-card ${i===0?'featured':''}`} key={r.title}><span>{r.category}</span><h2>{r.title}</h2><p>{r.description}</p><div><strong>{r.cost} Credits</strong><Button variant={i===0?'light':'dark'}>Redeem</Button></div></article>)}</div><section className="recognition"><div><p className="eyebrow">Contributor recognition</p><h2>Silver Solar Neighbour</h2><p>A quiet thank-you for consistent community contribution.</p></div><div className="level-track"><span>Bronze</span><span className="active">Silver</span><span>Gold</span></div></section></Shell> }
+function ConfirmDonationSummary({ propertyLabel, verifiedBy, verifiedExportToday, weeklyDonationCap, creditsCreated, onConfirm, showButton = false }) {
+ return <><div className="confirm-donation-grid"><article><span>Property</span><strong>{propertyLabel}</strong></article><article><span>Weekly donation cap</span><strong>{formatKwh(weeklyDonationCap)} kWh / week</strong></article><article className="confirm-donation-conversion"><span>Today’s verified conversion</span><strong>{formatKwh(verifiedExportToday)} kWh = {formatKwh(creditsCreated)} SARGE Credits</strong><small>1 verified donated kWh = 1 SARGE Credit.</small></article><article className="confirm-donation-verified"><span>Verified by</span><strong>{verifiedBy}</strong></article></div><article className="confirm-donation-info"><h2>What SARGE Credits can unlock later</h2><ul>{sargeCreditUnlocks.map(item=><li key={item}>{item}</li>)}</ul><p>Rewards accumulate over time and can be redeemed from your dashboard.</p></article><p className="confirm-donation-reassurance">You can change or stop your donation pledge anytime. SARGE only counts meter-verified exported kWh.</p>{showButton&&<Button onClick={onConfirm}>Confirm donation <ArrowRight size={18}/></Button>}</>;
+}
+
+function ConfirmDonation() {
+ const nav=useNavigate();
+ const draft=readStoredJson('sargeOnboardingDraft',{property:'Home',suburb:'Dapto',system_size_kw:6.6,donor_type:'household'});
+ const contribution=readStoredJson('sargeContribution',{donor_type:draft.donor_type,property_type:draft.property,suburb:draft.suburb,verified_export_today:demoVerification.verified_export_today,weekly_donation_cap:defaultWeeklyDonationCap,credits_created_today:demoVerification.verified_export_today,verification_method:demoVerification.verification_method});
+ const verifiedExportToday=Number(contribution.verified_export_today ?? demoVerification.verified_export_today);
+ const weeklyDonationCap=Number(contribution.weekly_donation_cap ?? defaultWeeklyDonationCap);
+ const creditsCreated=Number(contribution.credits_created_today ?? contribution.sarge_credits_created ?? 0);
+ const confirm=()=>{localStorage.setItem('sargeOnboardingComplete','true');nav('/overview')};
+ return <Shell title="Confirm Donation" eyebrow="Confirm Donation"><section className="confirm-donation-card"><ConfirmDonationSummary propertyLabel={`${contribution.property_type || draft.property || 'Home'} in ${contribution.suburb || draft.suburb || 'Dapto'}`} verifiedBy={formatVerificationMethod(contribution.verification_method)} verifiedExportToday={verifiedExportToday} weeklyDonationCap={weeklyDonationCap} creditsCreated={creditsCreated} onConfirm={confirm} showButton/></section></Shell>;
+}
+
+function Rewards() {
+ const creditBalance = 85;
+ const lifetimeCredits = 240;
+ const rewardsList = [
+  {title: 'Parking Credit', cost: 20, value: '1 hour council parking', cap: 'Monthly cap: 80 credits / 4 hours'},
+  {title: 'Leisure Credit', cost: 100, value: '$5 leisure centre credit', cap: 'Monthly cap: 200 credits / $10'},
+  {title: 'Green Waste Voucher', cost: 300, value: '$19 green waste voucher', cap: 'Monthly cap: 1 voucher'},
+ ];
+ const badgeProgress = Math.min(100, Math.round((lifetimeCredits / 300) * 100));
+
+ return <><Navbar/><main className="page rewards-page">
+  <header className="rewards-compact-title">
+   <p className="eyebrow">Rewards</p>
+   <h1>SARGE Credits</h1>
+  </header>
+
+  <section className="rewards-section credit-balance-section" aria-labelledby="credit-balance-title">
+   <div>
+    <span className="rewards-section-label">Credit Balance</span>
+    <h2 id="credit-balance-title"><strong>{creditBalance}</strong> SARGE Credits available</h2>
+    <p>1 SARGE Credit = 1 verified exported kWh</p>
+   </div>
+   <dl>
+    <div>
+     <dt>Lifetime credits</dt>
+     <dd>{lifetimeCredits}</dd>
+    </div>
+   </dl>
+  </section>
+
+  <section className="rewards-section" aria-labelledby="redeem-title">
+   <div className="rewards-section-head">
+    <span className="rewards-section-label">Redeem Civic Rewards</span>
+    <h2 id="redeem-title">Choose a council reward</h2>
+   </div>
+   <div className="civic-reward-grid">
+    {rewardsList.map(reward => {
+     const available = creditBalance >= reward.cost;
+     const away = Math.max(0, reward.cost - creditBalance);
+     return <article className={`civic-reward-card ${available ? 'available' : ''}`} key={reward.title}>
+      <div>
+       <span>{reward.cost} credits</span>
+       <h3>{reward.title}</h3>
+       <p>{reward.cost} credits = {reward.value}</p>
+      </div>
+      <small>{reward.cap}</small>
+      {available ? <button className="button" type="button">Redeem</button> : <strong>{away} credits away</strong>}
+     </article>;
+    })}
+   </div>
+  </section>
+
+  <section className="rewards-section recognition-section" aria-labelledby="recognition-title">
+   <div className="rewards-section-head">
+    <span className="rewards-section-label">Contributor Recognition</span>
+    <h2 id="recognition-title">Silver Solar Neighbour</h2>
+    <p>Badges are automatic recognition based on lifetime credits.</p>
+   </div>
+   <div className="badge-levels" aria-label="Badge levels">
+    <span>Bronze <b>50</b></span>
+    <span className="active">Silver <b>150</b></span>
+    <span>Gold <b>300</b></span>
+   </div>
+   <div className="badge-progress-row">
+    <span>{lifetimeCredits} / 300 to Gold</span>
+    <div className="badge-progress" aria-label={`${lifetimeCredits} of 300 lifetime credits toward Gold`}>
+     <i style={{width: `${badgeProgress}%`}}/>
+    </div>
+   </div>
+  </section>
+ </main></>;
+}
 
 function Reports() { const totals=energyHistory.reduce((a,x)=>({generated:a.generated+x.generated,used:a.used+x.used,spare:a.spare+x.spare,contributed:a.contributed+x.contributed}),{generated:0,used:0,spare:0,contributed:0}); return <Shell title="Your energy, clearly explained." eyebrow="Reports"><div className="reports-toolbar"><div><h2>Six-month report</h2><p>March–August 2026</p></div><div className="segmented">{['Monthly','Quarterly','Six months','Custom'].map((x,i)=><button className={i===2?'active':''} key={x}>{x}</button>)}</div><Button><Download size={18}/> Download report</Button></div><section className="chart-card"><h2>Generated, used and shared</h2><p className="chart-summary">Across six months, Bella generated {totals.generated} kWh, used {totals.used} kWh and contributed {totals.contributed} kWh.</p><div className="chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={energyHistory} margin={{top:20,right:10,left:-15,bottom:0}}><CartesianGrid vertical={false} stroke="#d9d9d9"/><XAxis dataKey="month" axisLine={false} tickLine={false}/><YAxis axisLine={false} tickLine={false}/><Tooltip cursor={{fill:'#f5f5f5'}}/><Legend/><Bar dataKey="generated" name="Generated" fill="#111" radius={[6,6,0,0]}/><Bar dataKey="used" name="Used" fill="#7D69E8" radius={[6,6,0,0]}/><Bar dataKey="contributed" name="Contributed" fill="#F893F6" stroke="#111" strokeWidth={1} radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div></section><h2 className="impact-title">Your six-month impact</h2><div className="impact-grid">{[['Total solar generated',totals.generated+' kWh'],['Total energy used',totals.used+' kWh'],['Total spare energy',totals.spare+' kWh'],['Total contributed',totals.contributed+' kWh'],['Sarge Credits earned',totals.contributed],['Households supported','18']].map(([l,v])=><div key={l}><span>{l}</span><strong>{v}</strong></div>)}</div></Shell> }
 
 function Onboarding() {
  const nav=useNavigate();
- const [screen,setScreen]=useState('hero'); const [property,setProperty]=useState('Home');
- const finish=()=>{localStorage.setItem('sargeOnboardingComplete','true');localStorage.setItem('sargeOnboardingDraft',JSON.stringify({property,suburb:'Dapto',system_size_kw:6.6}));nav('/overview')};
- if(screen==='property') return <main className="property-step"><header className="property-step__nav"><div className="brand-lockup" aria-label="Sarge, Wollongong Renewable Energy Ecosystem"><img src={heroAssets.mark} alt="" className="brand-lockup__mark"/><strong className="brand-lockup__name">Sarge</strong><img src={heroAssets.divider} alt="" className="brand-lockup__divider"/><span className="brand-lockup__tag">Wollongong Renewable<br/>Energy Ecosystem</span></div><a className="button property-step__contact" href="mailto:hello@sarge.community">Contact Us</a></header><section className="property-step__card"><div className="property-step__top"><button className="property-step__back" type="button" onClick={()=>setScreen('hero')}><ChevronLeft size={22}/> Back</button><div className="property-step__progress" aria-label="Step 1 of 3"><span className="active"/><span/><span/><span/></div></div><h1>Tell us about<br/>your <em>property.</em></h1><div className="property-step__types">{donorPropertyTypes.map(([label,Icon])=><button key={label} className={property===label?'selected':''} type="button" onClick={()=>setProperty(label)}><Icon size={30}/><strong>{label}</strong>{property===label&&<Check className="property-step__check" size={22}/>}</button>)}</div><div className="property-step__form"><label><span>Property name <small>optional</small></span><input placeholder="e.g. Bella’s home"/></label><label><span>Wollongong suburb</span><select defaultValue="Dapto"><option>Dapto</option><option>Corrimal</option><option>Figtree</option><option>Port Kembla</option><option>Woonona</option></select></label><label><span>Solar system size</span><div className="property-step__number"><input defaultValue="6.6" inputMode="decimal"/><b>kW</b></div></label></div><button className="button property-step__continue" type="button" onClick={finish}>Continue <ArrowRight size={25}/></button></section></main>;
+ const [screen,setScreen]=useState('hero');
+ const [property,setProperty]=useState('Home');
+ const [suburb,setSuburb]=useState('Dapto');
+ const [systemSize,setSystemSize]=useState('6.6');
+ const [eligibilityConsent,setEligibilityConsent]=useState(emptyConsent);
+ const [method,setMethod]=useState('demo_smart_meter_data');
+ const [uploadedExportFileName,setUploadedExportFileName]=useState(null);
+ const [retailer,setRetailer]=useState('');
+ const [inverterOrVppProvider,setInverterOrVppProvider]=useState('');
+ const [weeklyCap,setWeeklyCap]=useState(defaultWeeklyDonationCap);
+ const allConsent=consentItems.every(([key])=>eligibilityConsent[key]);
+ const verifiedExportToday=demoDataSourcePayload.verified_export_today;
+ const estimatedWeeklyExport=demoDataSourcePayload.estimated_weekly_export;
+ const weeklyDonationCap=clampWeeklyCap(weeklyCap,estimatedWeeklyExport);
+ const creditsToday=Math.min(verifiedExportToday,weeklyDonationCap);
+ const weeklyCapRemainingAfterToday=Math.max(weeklyDonationCap-creditsToday,0);
+ const updateWeeklyCap=value=>setWeeklyCap(clampWeeklyCap(value,estimatedWeeklyExport));
+ const draft=()=>({property,suburb,system_size_kw:Number(systemSize)||0,donor_type:donorTypeMap[property] || 'household'});
+ const dataSourcePayload=()=>({...demoDataSourcePayload,verification_method:method,uploaded_export_file_name:uploadedExportFileName,retailer:retailer || null,inverter_or_vpp_provider:inverterOrVppProvider || null,verified_export_today:method==='demo_smart_meter_data'?demoDataSourcePayload.verified_export_today:null,estimated_weekly_export:method==='demo_smart_meter_data'?demoDataSourcePayload.estimated_weekly_export:null});
+ const saveDraft=()=>localStorage.setItem('sargeOnboardingDraft',JSON.stringify(draft()));
+ const updateConsent=(key,checked)=>setEligibilityConsent(prev=>({...prev,[key]:checked}));
+ const selectDataSourceMethod=(id)=>{setMethod(id);if(id!=='upload_csv')setUploadedExportFileName(null);if(id!=='retailer_cdr')setRetailer('');if(id!=='inverter_vpp')setInverterOrVppProvider('')};
+ const continueToEligibility=()=>{saveDraft();setScreen('eligibility')};
+ const continueToDataSource=()=>{const payload={...eligibilityConsent,consented_at:new Date().toISOString()};setEligibilityConsent(payload);localStorage.setItem('sargeEligibilityConsent',JSON.stringify(payload));saveDraft();setScreen('data-source')};
+ const continueToPledge=()=>{if(method!=='demo_smart_meter_data')return;const payload={...dataSourcePayload(),uploaded_export_file_name:null,retailer:null,inverter_or_vpp_provider:null,verified_export_today:verifiedExportToday,estimated_weekly_export:estimatedWeeklyExport,verification_method:'demo_smart_meter_data'};saveDraft();localStorage.setItem('sargeDataSource',JSON.stringify(payload));localStorage.setItem('sargeVerificationSource',payload.verification_method);localStorage.setItem('sargeVerification',JSON.stringify({...payload,weekly_donation_cap:weeklyDonationCap,weekly_cap_remaining_after_today:weeklyCapRemainingAfterToday,status:'verified',verified:true}));setScreen('pledge')};
+ const saveContribution=()=>{const source=readStoredJson('sargeDataSource',demoDataSourcePayload);const contribution={donor_id:'D001',donor_type:donorTypeMap[property] || 'household',suburb,property_type:property,system_size_kw:Number(systemSize)||0,verification_method:source.verification_method || 'demo_smart_meter_data',verified_export_today:verifiedExportToday,estimated_weekly_export:estimatedWeeklyExport,weekly_donation_cap:weeklyDonationCap,weekly_cap_remaining_after_today:weeklyCapRemainingAfterToday,remaining_weekly_cap:weeklyCapRemainingAfterToday,credits_created_today:creditsToday,pledged_kwh:weeklyDonationCap,verified_spare_kwh:verifiedExportToday,contributed_kwh:creditsToday,sarge_credits_created:calculateSargeCredits(creditsToday),eligibility_consent:readStoredJson('sargeEligibilityConsent',{...emptyConsent,consented_at:''}),status:'verified',verified:true};saveDraft();localStorage.setItem('sargeContribution',JSON.stringify(contribution));localStorage.setItem('sargeVerification',JSON.stringify({...source,verified_export_today:verifiedExportToday,estimated_weekly_export:estimatedWeeklyExport,weekly_donation_cap:weeklyDonationCap,weekly_cap_remaining_after_today:weeklyCapRemainingAfterToday,status:'verified',verified:true}));return contribution};
+ const continueToConfirmDonation=()=>{saveContribution();setScreen('confirm-donation')};
+ const finishOnboarding=()=>{saveContribution();localStorage.setItem('sargeOnboardingComplete','true');nav('/overview')};
+ if(screen==='property') return <main className="property-step"><header className="property-step__nav"><div className="brand-lockup" aria-label="Sarge, Wollongong Renewable Energy Ecosystem"><img src={heroAssets.mark} alt="" className="brand-lockup__mark"/><strong className="brand-lockup__name">Sarge</strong><img src={heroAssets.divider} alt="" className="brand-lockup__divider"/><span className="brand-lockup__tag">Wollongong Renewable<br/>Energy Ecosystem</span></div><a className="button property-step__contact" href="mailto:hello@sarge.community">Contact Us</a></header><StepDots active={1}/><section className="property-step__card"><div className="property-step__top"><button className="property-step__back" type="button" onClick={()=>setScreen('hero')}><ChevronLeft size={22}/> Back</button><button className="property-step__top-continue" type="button" onClick={continueToEligibility}>Continue <ArrowRight size={22}/></button></div><h1>Tell us about<br/>your <em>property.</em></h1><div className="property-step__types">{donorPropertyTypes.map(([label,Icon])=><button key={label} className={property===label?'selected':''} type="button" onClick={()=>setProperty(label)}><Icon size={30}/><strong>{label}</strong>{property===label&&<Check className="property-step__check" size={22}/>}</button>)}</div><div className="property-step__form"><label><span>Property name <small>optional</small></span><input placeholder="e.g. Bella’s home"/></label><label><span>Wollongong suburb</span><select value={suburb} onChange={e=>setSuburb(e.target.value)}>{wollongongSuburbs.map(name=><option key={name} value={name}>{name}</option>)}</select></label><label><span>Solar system size</span><div className="property-step__number"><input value={systemSize} onChange={e=>setSystemSize(e.target.value)} inputMode="decimal"/><b>kW</b></div></label></div></section></main>;
+ if(screen==='eligibility') return <main className="property-step eligibility-step"><header className="property-step__nav"><div className="brand-lockup" aria-label="Sarge, Wollongong Renewable Energy Ecosystem"><img src={heroAssets.mark} alt="" className="brand-lockup__mark"/><strong className="brand-lockup__name">Sarge</strong><img src={heroAssets.divider} alt="" className="brand-lockup__divider"/><span className="brand-lockup__tag">Wollongong Renewable<br/>Energy Ecosystem</span></div><a className="button property-step__contact" href="mailto:hello@sarge.community">Contact Us</a></header><StepDots active={2}/><section className="property-step__card eligibility-step__card"><div className="property-step__top"><button className="property-step__back" type="button" onClick={()=>setScreen('property')}><ChevronLeft size={22}/> Back</button><button className="property-step__top-continue" type="button" disabled={!allConsent} onClick={continueToDataSource}>Continue <ArrowRight size={22}/></button></div><h1 className="eligibility-step__title">Confirm Solar Eligibility</h1><article className="eligibility-step__summary"><span>Property summary</span><strong>{property} in {suburb}, Wollongong LGA</strong><p>Solar system size: {systemSize} kW</p></article><div className="eligibility-step__checks">{consentItems.map(([key,label])=><label className={eligibilityConsent[key]?'checked':''} key={key}><input type="checkbox" checked={!!eligibilityConsent[key]} onChange={e=>updateConsent(key,e.target.checked)}/><span>{label}</span></label>)}</div>{!allConsent&&<p className="eligibility-step__helper">Please confirm all items to continue.</p>}</section></main>;
+ if(screen==='data-source') return <main className="property-step verify-step data-source-step"><header className="property-step__nav"><div className="brand-lockup" aria-label="Sarge, Wollongong Renewable Energy Ecosystem"><img src={heroAssets.mark} alt="" className="brand-lockup__mark"/><strong className="brand-lockup__name">Sarge</strong><img src={heroAssets.divider} alt="" className="brand-lockup__divider"/><span className="brand-lockup__tag">Wollongong Renewable<br/>Energy Ecosystem</span></div><a className="button property-step__contact" href="mailto:hello@sarge.community">Contact Us</a></header><StepDots active={3}/><section className="property-step__card verify-step__card data-source-step__card"><div className="property-step__top"><button className="property-step__back" type="button" onClick={()=>setScreen('eligibility')}><ChevronLeft size={22}/> Back</button><button className="property-step__top-continue" type="button" disabled={method!=='demo_smart_meter_data'} onClick={continueToPledge}>Continue <ArrowRight size={22}/></button></div><h1 className="data-source-step__title">Choose your export data source</h1><div className="data-source-step__methods" role="radiogroup" aria-label="Export data source">{dataSourceOptions.map(({id,title,badge,description,Icon})=><label key={id} className={`data-source-card ${method===id?'selected':''}`}><input type="radio" name="export-data-source" checked={method===id} onChange={()=>selectDataSourceMethod(id)}/><span className="data-source-card__radio" aria-hidden="true">{method===id&&<Check size={16}/>}</span><Icon className="data-source-card__icon" size={28}/><span className="data-source-card__copy"><span className="data-source-card__title">{title}{badge&&<b>{badge}</b>}</span><span className="data-source-card__description">{description}</span></span></label>)}</div>{method==='upload_csv'&&<section className="data-source-step__details"><label><span>Upload CSV file</span><input type="file" accept=".csv" onChange={e=>setUploadedExportFileName(e.target.files?.[0]?.name || null)}/></label>{uploadedExportFileName&&<strong>Selected file: {uploadedExportFileName}</strong>}</section>}{method==='retailer_cdr'&&<section className="data-source-step__details"><label><span>Electricity retailer</span><select value={retailer} onChange={e=>setRetailer(e.target.value)}><option value="">Select retailer</option>{retailerOptions.map(name=><option key={name} value={name}>{name}</option>)}</select></label></section>}{method==='inverter_vpp'&&<section className="data-source-step__details"><label><span>Inverter, battery, or VPP provider</span><select value={inverterOrVppProvider} onChange={e=>setInverterOrVppProvider(e.target.value)}><option value="">Select provider</option>{inverterOrVppProviderOptions.map(name=><option key={name} value={name}>{name}</option>)}</select></label></section>}</section></main>;
+ if(screen==='pledge') return <main className="property-step pledge-step"><header className="property-step__nav"><div className="brand-lockup" aria-label="Sarge, Wollongong Renewable Energy Ecosystem"><img src={heroAssets.mark} alt="" className="brand-lockup__mark"/><strong className="brand-lockup__name">Sarge</strong><img src={heroAssets.divider} alt="" className="brand-lockup__divider"/><span className="brand-lockup__tag">Wollongong Renewable<br/>Energy Ecosystem</span></div><a className="button property-step__contact" href="mailto:hello@sarge.community">Contact Us</a></header><StepDots active={4}/><section className="property-step__card pledge-step__card"><div className="property-step__top"><button className="property-step__back" type="button" onClick={()=>setScreen('data-source')}><ChevronLeft size={22}/> Back</button><button className="property-step__top-continue pledge-step__continue" type="button" onClick={continueToConfirmDonation}>Review donation <ArrowRight size={22}/></button></div><h1 className="data-source-step__title">Set your donation pledge</h1><div className="pledge-step__layout"><section className="pledge-step__metrics"><article className="pledge-step__credits pledge-step__conversion"><span>Verified export</span><strong>{formatKwh(verifiedExportToday)} kWh = {formatKwh(creditsToday)} SARGE Credits</strong></article><article><span>Weekly donation cap</span><strong>{formatKwh(weeklyDonationCap)} kWh</strong></article><article><span>Weekly cap remaining</span><strong>{formatKwh(weeklyCapRemainingAfterToday)} kWh</strong></article></section><section className="pledge-step__control"><label htmlFor="onboarding-weekly-cap">Weekly donation cap</label><div className="pledge-step__estimate"><span>Estimated weekly spare solar</span><strong>{formatKwh(estimatedWeeklyExport)} kWh</strong></div><input id="onboarding-weekly-cap" type="range" min="0" max={estimatedWeeklyExport} step="1" value={weeklyDonationCap} onChange={e=>updateWeeklyCap(e.target.value)}/><div className="pledge-step__number"><input aria-label="Weekly donation cap" type="number" min="0" max={estimatedWeeklyExport} value={weeklyDonationCap} onChange={e=>updateWeeklyCap(e.target.value)}/><span>kWh</span></div></section></div></section></main>;
+ if(screen==='confirm-donation') return <main className="property-step confirm-donation-step"><header className="property-step__nav"><div className="brand-lockup" aria-label="Sarge, Wollongong Renewable Energy Ecosystem"><img src={heroAssets.mark} alt="" className="brand-lockup__mark"/><strong className="brand-lockup__name">Sarge</strong><img src={heroAssets.divider} alt="" className="brand-lockup__divider"/><span className="brand-lockup__tag">Wollongong Renewable<br/>Energy Ecosystem</span></div><a className="button property-step__contact" href="mailto:hello@sarge.community">Contact Us</a></header><StepDots active={5}/><section className="property-step__card confirm-donation-step__card"><div className="property-step__top"><button className="property-step__back" type="button" onClick={()=>setScreen('pledge')}><ChevronLeft size={22}/> Back</button><button className="property-step__top-continue" type="button" onClick={finishOnboarding}>Confirm donation <ArrowRight size={22}/></button></div><h1 className="data-source-step__title">Confirm Donation</h1><ConfirmDonationSummary propertyLabel={`${property} in ${suburb}`} verifiedBy={formatVerificationMethod(method)} verifiedExportToday={verifiedExportToday} weeklyDonationCap={weeklyDonationCap} creditsCreated={creditsToday}/></section></main>;
  return <main className="landing-hero"><img className="landing-hero__background" src={heroAssets.background} alt="" aria-hidden="true"/><header className="landing-hero__nav"><div className="brand-lockup" aria-label="Sarge, Wollongong Renewable Energy Ecosystem"><img src={heroAssets.mark} alt="" className="brand-lockup__mark"/><strong className="brand-lockup__name">Sarge</strong><img src={heroAssets.divider} alt="" className="brand-lockup__divider"/><span className="brand-lockup__tag">Wollongong Renewable<br/>Energy Ecosystem</span></div><a className="button button--contact" href="mailto:hello@sarge.community">Contact Us</a></header><img className="landing-hero__illustration" src={heroAssets.family} alt="" aria-hidden="true"/><section className="landing-hero__content"><h1><span>Share the sun,</span><span>with <em>The Gong.</em></span></h1><p><strong>Sarge</strong> lets you contribute solar energy you don’t use to support Wollongong households experiencing energy hardship — while recognising you for helping.</p><div className="landing-hero__actions"><button className="button button--hero" type="button" onClick={()=>setScreen('property')}>Get Started <ArrowRight size={26}/></button><a className="button button--mobile-contact" href="mailto:hello@sarge.community">Contact Us</a></div></section></main>;
+}
+
+function Review() {
+ const nav=useNavigate();
+ const contribution=readStoredJson('sargeContribution',null);
+ const draft=readStoredJson('sargeOnboardingDraft',{property:'Home',suburb:'Dapto',system_size_kw:6.6,donor_type:'household'});
+ const payload=contribution || {donor_id:'D001',donor_type:draft.donor_type,suburb:draft.suburb,verified_export_today:demoVerification.verified_export_today,credits_created_today:demoVerification.verified_export_today,eligibility_consent:readStoredJson('sargeEligibilityConsent',{...emptyConsent,consented_at:''})};
+ const start=()=>{localStorage.setItem('sargeOnboardingComplete','true');nav('/overview')};
+ return <Shell title="Review your donor setup" eyebrow="Review"><section className="review-card"><div className="calculation"><span>Property</span><strong>{draft.property} in {draft.suburb}</strong><span>Verified export today</span><strong>{payload.verified_export_today} kWh</strong><span>SARGE Credits today</span><strong>{payload.credits_created_today}</strong><span>Reward</span><strong>{payload.reward_preference || 'Selected later'}</strong><span>Status</span><strong>{payload.status || 'ready'}</strong></div><Button onClick={start}>Start donating <ArrowRight size={18}/></Button></section></Shell>;
 }
 
 function RootRedirect(){const done=typeof window!=='undefined'&&localStorage.getItem('sargeOnboardingComplete')==='true'; return <Navigate to={done?'/overview':'/onboarding'} replace/>}
 function useIsClient(){return useSyncExternalStore(()=>()=>{},()=>true,()=>false)}
-export default function App(){const isClient=useIsClient();if(!isClient)return <main className="app-boot" aria-label="Loading Sarge"/>;return <BrowserRouter><Routes><Route path="/" element={<RootRedirect/>}/><Route path="/onboarding" element={<Onboarding/>}/><Route path="/overview" element={<Overview/>}/><Route path="/contribute" element={<Contribute/>}/><Route path="/rewards" element={<Rewards/>}/><Route path="/reports" element={<Reports/>}/><Route path="/council" element={<CouncilDashboard/>}/><Route path="/council/*" element={<CouncilDashboard/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter>}
+export default function App(){const isClient=useIsClient();if(!isClient)return <main className="app-boot" aria-label="Loading Sarge"/>;return <BrowserRouter><Routes><Route path="/" element={<RootRedirect/>}/><Route path="/onboarding" element={<Onboarding/>}/><Route path="/overview" element={<Overview/>}/><Route path="/contribute" element={<Contribute/>}/><Route path="/confirm-donation" element={<ConfirmDonation/>}/><Route path="/rewards" element={<Rewards/>}/><Route path="/review" element={<Review/>}/><Route path="/reports" element={<Reports/>}/><Route path="/council" element={<CouncilDashboard/>}/><Route path="/council/*" element={<CouncilDashboard/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter>}

@@ -1,5 +1,7 @@
 export const user={id:'D001',firstName:'Bella',suburb:'Dapto',donorType:'household',solarCapacityKw:6.6,credits:85};
 export const currentMonth={generatedKwh:160,consumedKwh:74,spareKwh:86,contributedKwh:85,availableKwh:1,householdsSupported:4};
+export const demoVerification={verified_export_today:8.4,estimated_weekly_export:42,verification_method:'demo_smart_meter_data'};
+export const defaultWeeklyDonationCap=22;
 export const energyHistory=[
  {month:'Mar',generated:132,used:81,spare:51,contributed:43},
  {month:'Apr',generated:141,used:78,spare:63,contributed:55},
