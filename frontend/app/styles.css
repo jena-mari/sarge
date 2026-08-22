@@ -219,6 +219,41 @@ body{background:#fff;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,
 @media(max-width:700px){.property-step{padding:18px}.property-step__nav{margin-bottom:12px}.step-dots{gap:8px;margin-bottom:14px}.step-dots span{width:7px;height:7px}.property-step__contact{display:none}.property-step__card{border-radius:28px;min-height:auto;padding:30px 20px}.property-step__top{display:flex;justify-content:space-between;margin-bottom:42px}.property-step__back,.property-step__top-continue{min-height:48px;padding:0 18px;font-size:1rem}.pledge-step__continue{font-size:.92rem;padding:0 16px}.property-step__top-continue span{display:none}.property-step h1{font-size:clamp(2.9rem,15vw,4.4rem);margin-bottom:36px}.property-step__types{grid-template-columns:1fr;gap:14px;margin-bottom:28px}.property-step__types button{height:118px;border-radius:24px;padding:22px 24px;flex-direction:row;align-items:center}.property-step__types strong{font-size:1.25rem}.property-step__check{right:18px;top:18px}.property-step__form{gap:20px}.property-step__form label{font-size:1.05rem}.eligibility-step__checks label{padding:13px 14px}.verify-step__methods,.data-source-step__methods,.pledge-step__metrics,.reward-confirm-step__grid{grid-template-columns:1fr;gap:14px}.verify-step__methods button{min-height:112px;border-radius:24px;padding:22px 24px}.data-source-card{min-height:126px;border-radius:24px;padding:22px 24px}.data-source-card__copy{margin-top:18px}.data-source-step__title{font-size:clamp(2.25rem,12vw,3.45rem)!important;line-height:.94!important;margin-top:8px!important;margin-bottom:24px!important}.pledge-step__metrics article,.pledge-step__control,.reward-confirm-step__grid button{border-radius:20px;padding:20px}.property-step__continue{width:100%;min-height:58px}.review-card{padding:20px}}
 @media(max-width:700px){.confirm-donation-grid{grid-template-columns:1fr}.civic-rate-grid{grid-template-columns:1fr}.confirm-donation-step .property-step__top-continue{white-space:normal;line-height:1.05;min-width:0}.confirm-donation-card{padding:22px}}
 
+/* Support intake */
+.support-landing .landing-hero__content{top:31%;width:63%}
+.support-landing__pill{display:inline-flex;width:max-content;background:#d7f204;color:#000;border-radius:999px;padding:9px 14px;margin:0 0 18px!important;font-size:clamp(.82rem,1vw,1rem)!important;line-height:1!important;font-weight:900!important;text-transform:uppercase;letter-spacing:.02em!important}
+.support-step__card{overflow:auto}
+.support-step h1{max-width:860px}
+.support-step__lead{max-width:760px;margin:0 auto 28px;text-align:center;color:#565b61;font-size:1.18rem;font-weight:750;line-height:1.35}
+.support-step__form{grid-template-columns:repeat(2,minmax(0,1fr))}
+.support-step__single{grid-template-columns:minmax(280px,680px);justify-content:center}
+.support-step__types{grid-template-columns:repeat(5,minmax(0,1fr));max-width:1420px}
+.support-step__toggle-row{width:min(980px,100%);margin:22px auto 0;background:#f0f0f1;border-radius:22px;padding:16px;display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center}
+.support-step__toggle-row span{font-size:clamp(1rem,1.1vw,1.18rem);font-weight:900;letter-spacing:-.04em}
+.support-step__toggle-row button,.support-step__chips button{border:0;background:#fff;border-radius:999px;min-height:46px;padding:0 20px;font-weight:900;cursor:pointer}
+.support-step__toggle-row button.selected,.support-step__chips button.selected{background:#050505;color:#fff}
+.support-step__dual-toggles{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:min(1180px,100%);margin:4px auto 0}
+.support-step__dual-toggles .support-step__toggle-row{width:100%;margin-top:0}
+.support-step__chips{display:flex;flex-wrap:wrap;gap:12px;width:min(1120px,100%);margin:0 auto 22px;justify-content:center}
+.support-step__chips button{background:#f0f0f1;border-radius:16px;min-height:50px}
+.support-step__priority-grid{width:min(980px,100%);margin:0 auto;display:grid;grid-template-columns:1fr;gap:12px}
+.support-step__priority-grid label{display:flex;align-items:flex-start;gap:14px;background:#f0f0f1;border-radius:18px;padding:18px 20px;font-size:clamp(1rem,1.08vw,1.18rem);font-weight:850;line-height:1.24;cursor:pointer}
+.support-step__priority-grid label.checked{background:#fff;outline:4px solid #0b7bea}
+.support-step__priority-grid input{width:23px;height:23px;margin:0;accent-color:#0b7bea;flex:0 0 auto}
+.support-step__note{width:min(1180px,100%);margin:12px auto 0;color:#565b61;font-weight:800}
+.support-step__summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;width:min(1280px,100%);margin:0 auto 18px}
+.support-step__summary article{background:#f0f0f1;border-radius:22px;padding:22px}
+.support-step__summary span{display:block;text-transform:uppercase;font-size:.75rem;font-weight:900;color:#6f7278;margin-bottom:9px}
+.support-step__summary strong{display:block;font-size:clamp(1.25rem,1.55vw,1.72rem);line-height:1;letter-spacing:-.05em}
+.support-step__summary small{display:block;margin-top:10px;color:#565b61;font-size:.9rem;font-weight:800;line-height:1.28}
+.support-step__payload{width:min(980px,100%);margin:0 auto;background:#f0f0f1;border-radius:18px;padding:16px 20px}
+.support-step__payload summary{font-weight:900;cursor:pointer}
+.support-step__payload pre{max-height:240px;overflow:auto;background:#fff;border-radius:14px;padding:16px;font-size:.82rem;line-height:1.45;white-space:pre-wrap}
+.support-step__submitted-card{align-items:center;justify-content:center;text-align:center}
+.support-step__submitted-card .property-step__top-continue{margin:0 auto}
+@media(max-width:1100px){.support-landing .landing-hero__content{width:70%}.support-step__types{grid-template-columns:repeat(2,1fr)}.support-step__summary{grid-template-columns:repeat(2,1fr)}.support-step__dual-toggles{grid-template-columns:1fr}}
+@media(max-width:700px){.support-landing .landing-hero__content{top:14%;width:auto}.support-landing__pill{font-size:.72rem!important}.support-step__form,.support-step__summary{grid-template-columns:1fr}.support-step__types{grid-template-columns:1fr}.support-step__toggle-row{grid-template-columns:1fr 1fr}.support-step__toggle-row span{grid-column:1/-1}.support-step__chips{justify-content:stretch}.support-step__chips button{width:100%}.support-step__payload pre{font-size:.74rem}.support-step__lead{font-size:1rem}}
+
 /* Rewards */
 .rewards-page{max-width:1160px;padding-top:34px}
 .rewards-compact-title{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:22px}
