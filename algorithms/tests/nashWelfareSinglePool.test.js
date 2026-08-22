@@ -295,3 +295,33 @@ describe('allocateWithReserve', () => {
     assert.ok(Math.abs(result.leftoverKwh - 3) < 1e-6); // 30 - 2 reserve - 25 distributed
   });
 });
+
+describe('nashWelfareSinglePoolAllocate — scaling regression', () => {
+  // The original implementation rescanned the full active household set
+  // every round it locked someone at their cap, making it O(n^2) in the
+  // worst case: measured directly at ~19ms for 1,000 households, ~3.3s
+  // for 10,000, and it did not finish within 2 minutes for 50,000. The
+  // O(n log n) sort-and-sweep rewrite handles 200,000 households in
+  // ~0.5s. This test is a tripwire against silently regressing back to
+  // the O(n^2) shape — it doesn't assert a tight bound (CI machines
+  // vary), just that a size a real city-scale deployment could plausibly
+  // need stays comfortably fast rather than blowing up.
+  test('20,000 households complete in well under a second, not the tens of seconds an O(n^2) implementation would take', () => {
+    const rand = mulberry32(271828);
+    const n = 20000;
+    const households = Array.from({ length: n }, (_, i) => ({
+      id: `h${i}`,
+      weight: 0.01 + rand() * 2,
+      capKwh: rand() * 15,
+    }));
+    const pool = rand() * n * 3;
+
+    const t0 = Date.now();
+    const result = nashWelfareSinglePoolAllocate(households, pool);
+    const elapsedMs = Date.now() - t0;
+
+    const total = Object.values(result.allocationKwh).reduce((a, b) => a + b, 0);
+    assert.ok(Math.abs(total + result.leftoverKwh - pool) < 1e-3, 'conservation must still hold at scale');
+    assert.ok(elapsedMs < 2000, `expected well under 2000ms at n=${n}, took ${elapsedMs}ms — check for an O(n^2) regression`);
+  });
+});
