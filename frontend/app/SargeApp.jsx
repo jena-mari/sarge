@@ -5,6 +5,7 @@ import { ArrowRight, BatteryCharging, Building2, Check, ChevronLeft, Download, F
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useEffect, useMemo, useState } from 'react';
 import { currentMonth, energyHistory, rewards, user, calculateContribution, calculateSargeCredits } from '../src/data/mockEnergyData';
+import CouncilDashboard from '../../council-frontend/app/CouncilDashboard';
 
 const Button = ({ children, variant = 'dark', className = '', ...props }) => <button className={`button button--${variant} ${className}`} {...props}>{children}</button>;
 
@@ -63,4 +64,4 @@ function StepActions({back,next,label='Continue',disabled=false}){return <div cl
 function OnboardingProgress({step}){return <div className="progress" aria-label={`Onboarding step ${Math.min(step+1,4)} of 4`}>{[0,1,2,3].map(i=><span className={i<=step?'active':''} key={i}/>)}</div>}
 
 function RootRedirect(){const done=typeof window!=='undefined'&&localStorage.getItem('sargeOnboardingComplete')==='true'; return <Navigate to={done?'/overview':'/onboarding'} replace/>}
-export default function App(){const [mounted,setMounted]=useState(false);useEffect(()=>setMounted(true),[]);if(!mounted)return <main className="app-boot" aria-label="Loading Sarge"/>;return <BrowserRouter><Routes><Route path="/" element={<RootRedirect/>}/><Route path="/onboarding" element={<Onboarding/>}/><Route path="/overview" element={<Overview/>}/><Route path="/contribute" element={<Contribute/>}/><Route path="/rewards" element={<Rewards/>}/><Route path="/reports" element={<Reports/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter>}
+export default function App(){const [mounted,setMounted]=useState(false);useEffect(()=>setMounted(true),[]);if(!mounted)return <main className="app-boot" aria-label="Loading Sarge"/>;return <BrowserRouter><Routes><Route path="/" element={<RootRedirect/>}/><Route path="/onboarding" element={<Onboarding/>}/><Route path="/overview" element={<Overview/>}/><Route path="/contribute" element={<Contribute/>}/><Route path="/rewards" element={<Rewards/>}/><Route path="/reports" element={<Reports/>}/><Route path="/council" element={<CouncilDashboard/>}/><Route path="/council/*" element={<CouncilDashboard/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter>}

@@ -9,6 +9,7 @@ The wider project explores rewards and fair community allocation for renewable e
 ```text
 app/                  Thin Sites deployment adapters
 frontend/             Frontend application UI, styles, and mock data
+council-frontend/     Council operations UI and operational mock data
 public/               Frontend static assets
 backend/              Reserved server-side application boundary
 algorithms/           Reserved energy allocation and fairness boundary
