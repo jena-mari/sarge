@@ -36,3 +36,5 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+public/assets/figma/figma-hero-reference.png
+public/assets/figma/hero-sun-shadow-bg.gif
