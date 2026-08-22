@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sarge.community/contracts/contribution-payload.schema.json",
+  "title": "Sarge contribution payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "donor_id",
+    "donor_type",
+    "suburb",
+    "generated_kwh",
+    "consumed_kwh",
+    "verified_spare_kwh",
+    "pledged_kwh",
+    "contributed_kwh",
+    "sarge_credits_created",
+    "verified"
+  ],
+  "properties": {
+    "donor_id": { "type": "string", "minLength": 1 },
+    "donor_type": {
+      "type": "string",
+      "enum": ["household", "apartment_building", "business", "council_property"]
+    },
+    "suburb": { "type": "string", "minLength": 1 },
+    "generated_kwh": { "type": "number", "minimum": 0 },
+    "consumed_kwh": { "type": "number", "minimum": 0 },
+    "verified_spare_kwh": { "type": "number", "minimum": 0 },
+    "pledged_kwh": { "type": "number", "minimum": 0 },
+    "contributed_kwh": { "type": "number", "minimum": 0 },
+    "sarge_credits_created": { "type": "number", "minimum": 0 },
+    "verified": { "const": true }
+  }
+}
