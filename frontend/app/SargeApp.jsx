@@ -13,7 +13,7 @@ const heroAssets = {
   background: '/assets/figma/hero-sun-shadow-bg.jpg',
   mark: '/assets/figma/sarge-logo-mark.png',
   divider: '/assets/figma/logo-divider.svg',
-  family: '/assets/figma/sarge-family-solar.png',
+  family: '/assets/figma/sarge-family-solar-crop.png',
 };
 const donorPropertyTypes = [['Home',Home],['Apartment Building',Building2],['Business',Building2],['Council Property',Building2]];
 
