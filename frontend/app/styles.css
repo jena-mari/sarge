@@ -68,11 +68,11 @@ body{background:#fff;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,
 .landing-hero .button:hover{box-shadow:0 11px 18px rgba(0,0,0,.18);transform:translateY(-1px)}
 .landing-hero .button--contact{min-height:60px;background:#fff;color:#000;border-radius:999px;padding:0 34px;font-size:1.26rem;font-weight:900;letter-spacing:-.04em}
 .landing-hero__content{position:relative;z-index:3;width:min(980px,62vw);margin-top:clamp(190px,26vh,270px)}
-.landing-hero__content h1{margin:0;font-size:clamp(5.6rem,7.15vw,7.25rem);line-height:.86;font-weight:900;letter-spacing:-.068em}
-.landing-hero__content em{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;letter-spacing:-.07em}
-.landing-hero__content p{margin:clamp(32px,4vh,48px) 0 0;max-width:760px;font-size:clamp(1.28rem,1.85vw,2.05rem);line-height:1.18;font-weight:850;letter-spacing:-.055em}
+.landing-hero__content h1{margin:0;font-size:clamp(5.6rem,7.15vw,7.25rem);line-height:.86;font-weight:800;letter-spacing:-.068em}
+.landing-hero__content em{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:650;letter-spacing:-.07em}
+.landing-hero__content p{margin:clamp(32px,4vh,48px) 0 0;max-width:760px;font-size:clamp(1.28rem,1.85vw,2.05rem);line-height:1.18;font-weight:700;letter-spacing:-.045em}
 .landing-hero__actions{display:flex;align-items:center;gap:16px;margin-top:clamp(42px,6vh,78px)}
-.landing-hero .button--hero{min-height:76px;border-radius:999px;background:#72aef0;color:#fff;padding:0 34px 0 40px;font-size:1.82rem;font-weight:900;letter-spacing:-.04em}
+.landing-hero .button--hero{min-height:76px;border-radius:999px;background:#72aef0;color:#fff;padding:0 34px 0 40px;font-size:1.82rem;font-weight:800;letter-spacing:-.035em}
 .landing-hero .button--mobile-contact{display:none;background:#fff;color:#000;border-radius:999px;font-weight:900}
 .landing-hero__illustration{position:absolute;z-index:1;right:clamp(-115px,-4.8vw,-55px);top:clamp(160px,18vh,220px);width:clamp(620px,47vw,760px);max-width:none;max-height:none;object-fit:contain;object-position:right top;pointer-events:none}
 
