@@ -2,6 +2,8 @@
 
 Sarge is a Wollongong community renewable-energy platform prototype. It helps solar contributors understand their energy journey, choose how much verified spare energy to share, receive Sarge Credits, and see their community impact.
 
+The wider project explores rewards and fair community allocation for renewable energy while keeping voluntary contribution—not electricity trading—at the centre of the product.
+
 ## Repository layout
 
 ```text
