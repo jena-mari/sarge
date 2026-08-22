@@ -9,7 +9,9 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+    "vercel-build": "next build",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "test:algorithms": "node --test algorithms/tests/*.test.js"
   },
   "dependencies": {
     "lucide-react": "^0.542.0",

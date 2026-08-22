@@ -7,6 +7,8 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { useState, useSyncExternalStore } from 'react';
 import { defaultWeeklyDonationCap, demoVerification, energyHistory, user, calculateSargeCredits } from '../src/data/mockEnergyData';
 import CouncilDashboard from '../../council-frontend/app/CouncilDashboard';
+import PriorityDemo from '../algorithm/demo/PriorityDemo';
+import Methodology from '../algorithm/docs/Methodology';
 
 const Button = ({ children, variant = 'dark', className = '', ...props }) => <button className={`button button--${variant} ${className}`} {...props}>{children}</button>;
 const StepDots = ({ active, total = 5 }) => <div className="step-dots" aria-label={`Step ${active} of ${total}`}>{Array.from({length:total},(_,i)=><span key={i} className={i<active?'active':''}/>)}</div>;
@@ -365,4 +367,4 @@ function Review() {
 
 function RootRedirect(){return <Navigate to="/support" replace/>}
 function useIsClient(){return useSyncExternalStore(()=>()=>{},()=>true,()=>false)}
-export default function App(){const isClient=useIsClient();if(!isClient)return <main className="app-boot" aria-label="Loading Sarge"/>;return <BrowserRouter><Routes><Route path="/" element={<RootRedirect/>}/><Route path="/support" element={<Onboarding/>}/><Route path="/onboarding" element={<Navigate to="/support" replace/>}/><Route path="/overview" element={<Overview/>}/><Route path="/contribute" element={<Contribute/>}/><Route path="/confirm-donation" element={<ConfirmDonation/>}/><Route path="/rewards" element={<Rewards/>}/><Route path="/review" element={<Review/>}/><Route path="/reports" element={<Reports/>}/><Route path="/council" element={<CouncilDashboard/>}/><Route path="/council/*" element={<CouncilDashboard/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter>}
+export default function App(){const isClient=useIsClient();if(!isClient)return <main className="app-boot" aria-label="Loading Sarge"/>;return <BrowserRouter><Routes><Route path="/" element={<RootRedirect/>}/><Route path="/support" element={<Onboarding/>}/><Route path="/onboarding" element={<Navigate to="/support" replace/>}/><Route path="/overview" element={<Overview/>}/><Route path="/contribute" element={<Contribute/>}/><Route path="/confirm-donation" element={<ConfirmDonation/>}/><Route path="/rewards" element={<Rewards/>}/><Route path="/review" element={<Review/>}/><Route path="/reports" element={<Reports/>}/><Route path="/council" element={<CouncilDashboard/>}/><Route path="/council/*" element={<CouncilDashboard/>}/><Route path="/algorithm/demo" element={<PriorityDemo/>}/><Route path="/algorithm/docs" element={<Methodology/>}/><Route path="/algorithm/docs/provenance" element={<Navigate to="/algorithm/docs" replace/>}/><Route path="*" element={<Navigate to="/" replace/>}/></Routes></BrowserRouter>}
