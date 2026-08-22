@@ -43,7 +43,8 @@ body{background:#fff;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,
 .page{width:min(1380px,92vw);padding-top:54px}.page-title{border:0;padding-bottom:0;margin-bottom:36px;align-items:flex-end}.page-title .eyebrow{font-size:2.4rem;font-weight:650;letter-spacing:-.045em;color:#1d1d1f}.page-title h1{font-size:1.25rem;color:#6e6e73;font-weight:500;letter-spacing:-.02em}
 .overview-grid{gap:20px}.overview-grid h2{font-size:1.15rem;font-weight:600;color:#6e6e73;margin-left:4px}
 .credit-card,.report-card,.energy-panel,.pledge-card,.success-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div,.rewards-head>div,.today-flow,.availability{border:0;border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,.055)}
-.credit-card{background:#f5f5f7;padding:28px}.credit-card:before{display:none}.credit-card>strong{font-size:5.2rem;color:#1d1d1f;font-weight:700;letter-spacing:-.07em}.credit-card h3{font-size:1.4rem;font-weight:600}.credit-card p{color:#6e6e73;font-weight:500}.credit-card .button{background:#1d1d1f;color:#fff}.credit-card .button:hover{background:#333336}
+.credit-card{background:#f5f5f7;padding:28px;position:relative}.credit-card:before{display:none}.credit-card>strong{font-size:5.2rem;color:#1d1d1f;font-weight:700;letter-spacing:-.07em}.credit-card h3{font-size:1.4rem;font-weight:600}.credit-card p{color:#6e6e73;font-weight:500}.credit-card .button{background:#1d1d1f;color:#fff}.credit-card .button:hover{background:#333336}
+.credit-card__added{position:absolute;top:22px;right:22px;display:inline-flex;width:max-content;max-width:calc(100% - 44px);padding:7px 12px;border-radius:999px;background:#e7f6a8;color:#1d1d1f;font-size:.88rem;font-weight:800}
 .impact-note{background:transparent;border:0;margin:18px 4px;padding:0;color:#6e6e73}.impact-note svg{color:#0071e3}
 .report-card{padding:36px;background:#f5f5f7;min-height:548px}.report-card h2{font-size:2rem;font-weight:650;letter-spacing:-.035em}.report-card>p:not(.eyebrow){color:#6e6e73}.report-icon{border:0;border-radius:50%;background:#fff;color:#0071e3;box-shadow:0 4px 18px rgba(0,0,0,.07)}.segmented{background:#e8e8ed;border-radius:12px}.segmented button{border-radius:9px;font-weight:550;color:#6e6e73}.segmented button.active{background:#fff;color:#1d1d1f;box-shadow:0 2px 8px rgba(0,0,0,.08)}.report-placeholder{border:0;border-radius:17px;background:#fff}.report-line{background:#e8e8ed}.report-preview div{background:#fff;border-radius:13px}.report-preview .benefit{background:#f9e8f7;border:0}
 .energy-panel{background:#f5f5f7;padding:30px}.energy-step{border-color:#d2d2d7}.step-index{border:0;background:#fff;color:#6e6e73;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.06)}.energy-step p{font-weight:600}.energy-step strong{color:#1d1d1f;font-size:2.15rem;font-weight:650}.energy-step>span:last-of-type{color:#86868b}.energy-step.contributed{background:#fff;border:0;border-left:0;border-radius:16px;box-shadow:0 5px 20px rgba(0,0,0,.06)}.energy-step.contributed:after{content:'';position:absolute;top:0;bottom:0;left:0;width:4px;background:#ce55c4;border-radius:16px 0 0 16px}.still-available{border-color:#d2d2d7}
@@ -192,12 +193,20 @@ body{background:#fff;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,
 .confirm-donation-grid strong{display:block;font-size:clamp(1.2rem,1.7vw,1.75rem);letter-spacing:-.04em;line-height:1.05}
 .confirm-donation-grid small{display:block;margin-top:8px;color:#565b61;font-size:.9rem;font-weight:800;line-height:1.25}
 .confirm-donation-conversion{background:#fff!important;outline:4px solid #0b7bea}
-.confirm-donation-verified strong{display:inline-flex;width:max-content;max-width:100%;background:#050505;color:#fff;border-radius:999px;padding:8px 12px;font-size:.95rem;letter-spacing:0}
+.confirm-donation-equation{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin-top:14px}
+.confirm-donation-equation div{min-width:0}
+.confirm-donation-equation b{font-size:clamp(1.8rem,3vw,3rem);line-height:1;color:#0b7bea}
+.confirm-donation-equation small{margin-top:6px;text-transform:uppercase;font-size:.72rem}
 .confirm-donation-info{width:min(980px,100%);margin:0 auto 14px;background:#f0f0f1;border-radius:18px;padding:18px 20px}
-.confirm-donation-info ul{margin:10px 0 0;padding-left:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 18px;color:#202024;font-weight:850}
+.civic-rate-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.civic-rate-tile{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:#fff;border-radius:14px;padding:14px}
+.civic-rate-tile strong{font-size:1rem;line-height:1;letter-spacing:-.03em}
+.civic-rate-tile b{font-size:1.3rem;color:#0b7bea}
+.civic-rate-tile small{grid-column:1/-1;color:#565b61;font-weight:850;line-height:1.2}
 .confirm-donation-info p{margin:14px 0 0;color:#565b61;font-weight:800;line-height:1.35}
 .confirm-donation-reassurance{width:min(980px,100%);margin:0 auto 18px;color:#565b61;font-weight:850;line-height:1.35;text-align:center}
 .confirm-donation-card>.button{width:100%;margin-top:4px}
+.confirm-donation-step__card>.button{width:min(980px,100%);margin:4px auto 0;display:flex}
 .verify-step__battery{width:min(780px,100%);margin:0 auto;text-align:center}
 .verify-step__battery h2{margin:0 0 14px;font-size:1.45rem;letter-spacing:-.04em}
 .verify-step__battery div{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
@@ -208,7 +217,7 @@ body{background:#fff;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,
 
 @media(max-width:1100px){.property-step{height:auto;min-height:100svh;overflow:auto;padding:28px}.property-step__card{padding:54px 42px}.property-step__types{grid-template-columns:repeat(2,1fr)}.property-step__form{grid-template-columns:1fr}.verify-step__methods,.data-source-step__methods,.reward-confirm-step__grid{grid-template-columns:repeat(2,1fr)}.verify-step__result,.pledge-step__layout{grid-template-columns:1fr}}
 @media(max-width:700px){.property-step{padding:18px}.property-step__nav{margin-bottom:12px}.step-dots{gap:8px;margin-bottom:14px}.step-dots span{width:7px;height:7px}.property-step__contact{display:none}.property-step__card{border-radius:28px;min-height:auto;padding:30px 20px}.property-step__top{display:flex;justify-content:space-between;margin-bottom:42px}.property-step__back,.property-step__top-continue{min-height:48px;padding:0 18px;font-size:1rem}.pledge-step__continue{font-size:.92rem;padding:0 16px}.property-step__top-continue span{display:none}.property-step h1{font-size:clamp(2.9rem,15vw,4.4rem);margin-bottom:36px}.property-step__types{grid-template-columns:1fr;gap:14px;margin-bottom:28px}.property-step__types button{height:118px;border-radius:24px;padding:22px 24px;flex-direction:row;align-items:center}.property-step__types strong{font-size:1.25rem}.property-step__check{right:18px;top:18px}.property-step__form{gap:20px}.property-step__form label{font-size:1.05rem}.eligibility-step__checks label{padding:13px 14px}.verify-step__methods,.data-source-step__methods,.pledge-step__metrics,.reward-confirm-step__grid{grid-template-columns:1fr;gap:14px}.verify-step__methods button{min-height:112px;border-radius:24px;padding:22px 24px}.data-source-card{min-height:126px;border-radius:24px;padding:22px 24px}.data-source-card__copy{margin-top:18px}.data-source-step__title{font-size:clamp(2.25rem,12vw,3.45rem)!important;line-height:.94!important;margin-top:8px!important;margin-bottom:24px!important}.pledge-step__metrics article,.pledge-step__control,.reward-confirm-step__grid button{border-radius:20px;padding:20px}.property-step__continue{width:100%;min-height:58px}.review-card{padding:20px}}
-@media(max-width:700px){.confirm-donation-grid{grid-template-columns:1fr}.confirm-donation-info ul{grid-template-columns:1fr}.confirm-donation-step .property-step__top-continue{white-space:normal;line-height:1.05;min-width:0}.confirm-donation-card{padding:22px}}
+@media(max-width:700px){.confirm-donation-grid{grid-template-columns:1fr}.civic-rate-grid{grid-template-columns:1fr}.confirm-donation-step .property-step__top-continue{white-space:normal;line-height:1.05;min-width:0}.confirm-donation-card{padding:22px}}
 
 /* Rewards */
 .rewards-page{max-width:1160px;padding-top:34px}
