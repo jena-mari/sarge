@@ -5,15 +5,15 @@ Sarge is a Wollongong community renewable-energy platform prototype. It helps so
 ## Repository layout
 
 ```text
-app/                  Frontend routes and application UI
-src/                  Frontend data and reusable client modules
+app/                  Thin Sites deployment adapters
+frontend/             Frontend application UI, styles, and mock data
 public/               Frontend static assets
 backend/              Reserved server-side application boundary
 algorithms/           Reserved energy allocation and fairness boundary
 contracts/            Shared API and event payload schemas
 ```
 
-The frontend remains at the repository root because the current Sites deployment expects the application entry points, build configuration, and hosting metadata there.
+The frontend implementation lives in `frontend/`. Thin root adapters preserve the current Sites deployment contract.
 
 ## Frontend
 

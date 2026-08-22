@@ -1,10 +1,11 @@
 # Frontend
 
-The deployed frontend currently lives in the repository root:
+The frontend source lives in this directory:
 
-- `app/` contains the application shell, routes, and styles.
+- `app/SargeApp.jsx` contains the application shell and routes.
+- `app/styles.css` contains the complete responsive visual system.
 - `src/data/` contains isolated mock data and calculation helpers.
 - `public/` contains static assets.
-- `vite.config.js` and `next.config.js` configure the Sites-compatible build.
+- Root entry files adapt this source to the current Sites-compatible build.
 
-Keeping these files at root preserves the existing deployment contract. If the repository later becomes a formal workspace or monorepo, this boundary can be moved into `frontend/` together with an explicit hosting configuration update.
+The root `app/page.jsx` and `app/globals.css` files are intentionally thin deployment adapters. Product UI changes should be made here in `frontend/`.
