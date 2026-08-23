@@ -210,7 +210,7 @@ const makeSupportPayload = form => {
  };
 };
 
-function Logo() { return <NavLink className="logo" to="/overview" aria-label="Sarge home"><Zap size={24} fill="currentColor" strokeWidth={3}/><strong>Sarge</strong></NavLink>; }
+function Logo() { return <NavLink className="logo" to="/overview" aria-label="Sarge home"><img src="/assets/figma/sarge-lightning-mark.png" alt=""/><strong>Sarge</strong></NavLink>; }
 
 function Navbar() {
   const [open, setOpen] = useState(false);
