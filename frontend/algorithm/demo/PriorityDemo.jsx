@@ -72,7 +72,7 @@ for (const [slot, id] of Object.entries(DEMO_HOUSEHOLD_IDS)) {
     no_solar_access: round2(h.no_solar_access),
   };
   REAL_FLAG_DEFAULTS[slot] = { life_support: h.life_support_flag, high_need: h.is_high_need_area };
-  REAL_NAMES[slot] = h.suburb;
+  REAL_NAMES[slot] = 'Household ' + slot;
 }
 
 const STYLE = `
@@ -318,15 +318,19 @@ const STYLE = `
   .score-value-big.pop { transform: scale(1.18); }
 
   .crit-row {
-    display: grid;
-    grid-template-columns: 6.7rem 2.6rem 1fr 2.3rem;
-    align-items: center;
-    gap: 0.55rem;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.7rem;
   }
+  .crit-row-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+  .crit-meta { display: flex; align-items: baseline; gap: 0.5rem; flex-shrink: 0; }
   .crit-label { font-size: 0.74rem; color: var(--ink-2); }
   .crit-weight { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--ink-3); }
-  .crit-value { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .crit-value { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; min-width: 2.3rem; }
   .formula-strip {
     margin-top: 0.75rem; padding-top: 0.7rem; border-top: 1px dashed var(--line);
     font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; color: var(--ink-3);
@@ -464,7 +468,7 @@ const STYLE = `
   .control-label .chip { width: 0.55rem; height: 0.55rem; border-radius: 2px; display: inline-block; margin-right: 0.45rem; vertical-align: middle; }
   .control-label .val { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; color: var(--ink); font-size: 0.8rem; }
 
-  input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 3px; background: var(--track); outline: none; }
+  input[type="range"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--track); outline: none; }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%;
     background: var(--blue); border: 2px solid var(--bg); cursor: pointer; box-shadow: 0 0 0 1px var(--blue);
@@ -510,10 +514,12 @@ const STYLE = `
   .pipe { fill: none; stroke: var(--blue); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 2.5 4; opacity: 0.7; transition: stroke 0.5s ease, opacity 0.5s ease; }
   .pipe.flowing { animation: flow 1.4s linear infinite; }
   .pipe.locked { stroke: var(--line); opacity: 0.5; animation: none; stroke-dasharray: none; }
+  .pipe.skipped { stroke: var(--reserve); opacity: 0.4; animation: none; stroke-dasharray: none; }
   @keyframes flow { to { stroke-dashoffset: -13; } }
 
   .valve { fill: var(--blue); transition: fill 0.4s ease, r 0.3s ease; }
   .valve.locked { fill: var(--ink-3); }
+  .valve.skipped { fill: var(--reserve); opacity: 0.6; }
   .valve.pulsing { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { r: 2.6; } 50% { r: 3.3; } }
 
@@ -538,6 +544,7 @@ const STYLE = `
   .tank-badge.filling { color: var(--blue); border-color: var(--blue); background: var(--blue-soft); }
   .tank-badge.locked { color: var(--status-locked); border-color: var(--status-locked); background: var(--status-locked-soft); }
   .tank-badge.settled { color: var(--status-settled); border-color: var(--status-settled); background: var(--status-settled-soft); }
+  .tank-badge.skipped { color: var(--reserve); border-color: var(--reserve); background: #FDEAEA; }
 
   .tank-body { position: relative; width: min(100%, 4.8rem); height: 8rem; border-radius: 8px 8px 4px 4px; background: var(--track); border: 1px solid var(--line); overflow: hidden; }
   .tank-cap-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--ink-3); opacity: 0.6; }
@@ -580,6 +587,7 @@ const STYLE = `
   .lockrow .status-tag { font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.1rem 0.45rem; border-radius: 999px; margin-left: 0.5rem; }
   .lockrow .status-tag.locked { color: var(--status-locked); background: var(--status-locked-soft); }
   .lockrow .status-tag.settled { color: var(--status-settled); background: var(--status-settled-soft); }
+  .lockrow .status-tag.skipped { color: var(--reserve); background: #FDEAEA; }
   .lockplaceholder { font-size: 0.85rem; color: var(--ink-3); padding: 0.6rem 0.2rem; font-style: italic; }
 
   footer { margin-top: 2.5rem; padding-top: 1.4rem; border-top: 1px solid var(--line); font-size: 0.82rem; color: var(--ink-3); line-height: 1.6; }
@@ -595,17 +603,18 @@ const STYLE = `
 `;
 
 const BODY_HTML = `<div class="pf-page">
-  <a href="/overview" style="display:inline-flex;align-items:center;gap:4px;font-size:0.85rem;font-weight:700;text-decoration:none;color:inherit;margin-bottom:1rem">&larr; Back to Sarge</a>
-
-  
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <a href="/overview" style="display:inline-flex;align-items:center;gap:4px;font-size:0.85rem;font-weight:700;text-decoration:none;color:inherit;">&larr; Back to Sarge</a>
+    <a href="/algorithm/docs" style="display:inline-flex;align-items:center;gap:4px;font-size:0.85rem;font-weight:700;text-decoration:none;color:var(--blue);">Methodology &amp; Data Provenance Docs &rarr;</a>
+  </div>
 
   <header>
     <div class="pf-eyebrow">Power Commons Exchange · Live Demo</div>
     <h1>Priority Algorithm</h1>
     <p class="lede">
       A two-step algorithm: first <strong>score</strong> every request from raw hardship data, then
-      <strong>allocate</strong> the shared pool proportionally until each tank hits its ceiling. Walk
-      through it stage by stage below.
+      <strong>allocate</strong> the shared pool in strict priority order — each household commits its
+      full ceiling or gets nothing at all. Walk through it stage by stage below.
     </p>
     <p class="lede" style="margin-top:0.4rem;font-size:0.86rem;">
       The five households below are real Wollongong suburbs (Coniston, Bellambi, Cordeaux Heights,
@@ -658,9 +667,10 @@ const BODY_HTML = `<div class="pf-page">
       </div>
       <div class="panel-intro">
         <h2>Step 2 — the shared pool drains into a queue, live</h2>
-        <p>An emergency reserve is held back first. The rest pours into every household simultaneously,
-          proportional to its score, until a tank hits its ceiling and locks — the queue on the right
-          emerges from that, it isn't decided in advance.</p>
+        <p>An emergency reserve is held back first. The rest is offered to households strictly in
+          priority-score order: each either commits its full ceiling and locks, or is skipped outright
+          if what's left won't cover it — the queue on the right emerges from that, it isn't decided
+          in advance.</p>
       </div>
 
       <div class="global-controls">
@@ -731,7 +741,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-A" id="fill-A"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Coniston</span>
+                <span class="tank-name">Household A</span>
                 <span class="tank-score" id="scorelabel-A">score 0.00</span>
                 <span class="tank-kwh tank-kwh-A" id="kwh-A">0.00 kWh</span>
               </div>
@@ -743,7 +753,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-B" id="fill-B"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Bellambi</span>
+                <span class="tank-name">Household B</span>
                 <span class="tank-score" id="scorelabel-B">score 0.00</span>
                 <span class="tank-kwh tank-kwh-B" id="kwh-B">0.00 kWh</span>
               </div>
@@ -755,7 +765,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-C" id="fill-C"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Cordeaux Heights</span>
+                <span class="tank-name">Household C</span>
                 <span class="tank-score" id="scorelabel-C">score 0.00</span>
                 <span class="tank-kwh tank-kwh-C" id="kwh-C">0.00 kWh</span>
               </div>
@@ -767,7 +777,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-D" id="fill-D"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Warrawong</span>
+                <span class="tank-name">Household D</span>
                 <span class="tank-score" id="scorelabel-D">score 0.00</span>
                 <span class="tank-kwh tank-kwh-D" id="kwh-D">0.00 kWh</span>
               </div>
@@ -779,7 +789,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-E" id="fill-E"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Figtree</span>
+                <span class="tank-name">Household E</span>
                 <span class="tank-score" id="scorelabel-E">score 0.00</span>
                 <span class="tank-kwh tank-kwh-E" id="kwh-E">0.00 kWh</span>
               </div>
@@ -808,10 +818,11 @@ const BODY_HTML = `<div class="pf-page">
     Priority score = the same hardship formula as <code>compute_hardship_score()</code> in
     <code>scoring_and_tiered_allocation.py</code>: if <code>life_support_flag</code> or
     <code>is_high_need_area</code> is set, the score is hard-overridden to 1.00; otherwise it's the
-    weighted sum of five factors (fixed weights summing to 1.00). The fountain is
-    <code>simple_nash_allocation.py</code>'s water-filling loop, played out continuously: every uncapped
-    household draws at once, proportional to score, until it hits the ceiling and seals off — the
-    remaining pool re-splits automatically among whoever's left. The five households and their raw
+    weighted sum of five factors (fixed weights summing to 1.00). The fountain plays out a binary,
+    all-or-nothing priority queue: households are tried strictly in priority-score order, and each
+    either commits its full ceiling from the pool or is skipped outright — never a partial share.
+    A skipped household doesn't stop the queue; the next, lower-priority household is still tried
+    against whatever's left. The five households and their raw
     figures are real Wollongong data, sourced from ABS SEIFA, Council's Energy Equity Assessment and
     Framework, Endeavour Energy's postcode consumption data, and the Australian PV Institute — see the
     <a href="/algorithm/docs" style="color:inherit">Data Provenance Dossier</a> for every field's full
@@ -847,7 +858,7 @@ const SCRIPT_SOURCE = `
   const FLAG_DEFAULTS = ${JSON.stringify(REAL_FLAG_DEFAULTS)};
   const names = ${JSON.stringify(REAL_NAMES)};
   const IDENTITY = { A: '#7C6FEF', B: '#F0409E', C: '#F5A623', D: '#14B8A6', E: '#9F1239' };
-  const STATUS_COLOR = { locked: '#16A34A', settled: '#64748B' };
+  const STATUS_COLOR = { locked: '#16A34A', settled: '#64748B', skipped: '#E23D3D' };
   const overrideFlags = {};
   ids.forEach(id => { overrideFlags[id] = { ...FLAG_DEFAULTS[id] }; });
   function isOverridden(id) { return overrideFlags[id].life_support === 1 || overrideFlags[id].high_need === 1; }
@@ -1093,10 +1104,14 @@ const SCRIPT_SOURCE = `
         row.className = 'crit-row';
         const sliderId = 'crit-' + id + '-' + c.key;
         row.innerHTML =
-          '<span class="crit-label">' + c.label + '</span>' +
-          '<span class="crit-weight">&times;' + c.weight.toFixed(2) + '</span>' +
-          '<input type="range" min="0" max="1" step="0.01" value="' + DEFAULTS[id][c.key] + '" id="' + sliderId + '">' +
-          '<span class="crit-value" id="val-' + sliderId + '">' + DEFAULTS[id][c.key].toFixed(2) + '</span>';
+          '<div class="crit-row-top">' +
+            '<span class="crit-label">' + c.label + '</span>' +
+            '<span class="crit-meta">' +
+              '<span class="crit-weight">&times;' + c.weight.toFixed(2) + '</span>' +
+              '<span class="crit-value" id="val-' + sliderId + '">' + DEFAULTS[id][c.key].toFixed(2) + '</span>' +
+            '</span>' +
+          '</div>' +
+          '<input type="range" min="0" max="1" step="0.01" value="' + DEFAULTS[id][c.key] + '" id="' + sliderId + '">';
         card.appendChild(row);
         const input = row.querySelector('input');
         critSliders[id][c.key] = input;
@@ -1194,6 +1209,13 @@ const SCRIPT_SOURCE = `
     return CRITERIA.reduce((sum, c) => sum + c.weight * parseFloat(critSliders[id][c.key].value), 0);
   }
 
+  function updateSliderFill(input) {
+    const min = parseFloat(input.min) || 0;
+    const max = parseFloat(input.max) || 1;
+    const pct = max > min ? ((parseFloat(input.value) - min) / (max - min)) * 100 : 0;
+    input.style.background = 'linear-gradient(to right, var(--blue) ' + pct + '%, var(--track) ' + pct + '%)';
+  }
+
   function readInputs() {
     const pool = parseFloat(sliders.pool.value);
     const reserve = Math.min(parseFloat(sliders.reserve.value), pool);
@@ -1233,6 +1255,7 @@ const SCRIPT_SOURCE = `
         const sliderId = 'crit-' + id + '-' + c.key;
         const val = parseFloat(critSliders[id][c.key].value);
         document.getElementById('val-' + sliderId).textContent = val.toFixed(2);
+        updateSliderFill(critSliders[id][c.key]);
         critSliders[id][c.key].closest('.crit-row').classList.toggle('dimmed', overridden);
         const rawCell = document.getElementById('csv-' + id + '-' + c.key + '-raw');
         if (rawCell) rawCell.innerHTML = rawContext(c.key, val) + '<span class="csv-src">' + SOURCES[c.key] + '</span>';
@@ -1262,55 +1285,42 @@ const SCRIPT_SOURCE = `
       const csvScoreCell = document.getElementById('csv-' + id + '-score');
       if (csvScoreCell) csvScoreCell.textContent = v.scores[id].toFixed(3);
     });
+    updateSliderFill(sliders.pool);
+    updateSliderFill(sliders.reserve);
+    updateSliderFill(sliders.ceiling);
     valOut.pool.textContent = v.pool.toFixed(1);
     valOut.reserve.textContent = v.reserve.toFixed(1);
     valOut.ceiling.textContent = v.ceiling.toFixed(1);
   }
 
+  // Binary, all-or-nothing priority queue: highest score first, each
+  // household either fully commits its ceiling or is skipped outright
+  // (no partial fill) — skip-and-continue, so a lower-priority household
+  // with room to fit isn't blocked by one that didn't.
   function simulate(scores, ceiling, pool) {
-    let active = ids.slice();
+    const priorityOrder = ids.slice().sort((a, b) => scores[b] - scores[a] || (a < b ? -1 : a > b ? 1 : 0));
     const fills = {}; ids.forEach(id => fills[id] = 0);
     const breakpoints = {}; ids.forEach(id => breakpoints[id] = [{ c: 0, f: 0 }]);
     const lockOrder = [];
+    const EPS = 1e-9;
     let consumedTotal = 0;
     let remaining = pool;
-    const EPS = 1e-9;
-    let guard = 0;
 
-    while (active.length > 0 && remaining > EPS && guard < 50) {
-      guard++;
-      const S = active.reduce((s, id) => s + scores[id], 0);
-      let minNeeded = Infinity;
-      active.forEach(id => {
-        const room = Math.max(0, ceiling - fills[id]);
-        const needed = room * S / scores[id];
-        if (needed < minNeeded) minNeeded = needed;
-      });
-      const consumed = Math.min(minNeeded, remaining);
-      active.forEach(id => { fills[id] += (scores[id] / S) * consumed; });
-      consumedTotal += consumed;
-      remaining -= consumed;
-      active.forEach(id => { breakpoints[id].push({ c: consumedTotal, f: fills[id] }); });
-
-      const justLocked = active.filter(id => ceiling - fills[id] <= 1e-6);
-      if (justLocked.length > 0 && remaining > EPS) {
-        justLocked.forEach(id => lockOrder.push({ id, consumedAt: consumedTotal, reason: 'ceiling' }));
-        active = active.filter(id => justLocked.indexOf(id) === -1);
-      } else if (remaining <= EPS) {
-        active.forEach(id => {
-          const reason = (ceiling - fills[id] <= 1e-6) ? 'ceiling' : 'settled';
-          lockOrder.push({ id, consumedAt: consumedTotal, reason });
-        });
-        active = [];
+    priorityOrder.forEach(id => {
+      if (ceiling <= remaining + EPS) {
+        const before = consumedTotal;
+        consumedTotal += ceiling;
+        remaining = Math.max(0, remaining - ceiling);
+        fills[id] = ceiling;
+        breakpoints[id].push({ c: before, f: 0 });
+        breakpoints[id].push({ c: consumedTotal, f: ceiling });
+        lockOrder.push({ id, consumedAt: consumedTotal, reason: 'committed' });
       } else {
-        break;
-      }
-    }
-    ids.forEach(id => {
-      if (!lockOrder.some(e => e.id === id)) {
-        lockOrder.push({ id, consumedAt: consumedTotal, reason: 'settled' });
+        breakpoints[id].push({ c: consumedTotal, f: 0 });
+        lockOrder.push({ id, consumedAt: consumedTotal, reason: 'skipped' });
       }
     });
+
     return { breakpoints, lockOrder, consumedTotal, finalFills: fills, leftover: Math.max(0, remaining), pool, ceiling };
   }
 
@@ -1355,7 +1365,7 @@ const SCRIPT_SOURCE = `
     reservoirLiquid.setAttribute('y', RES_TOP);
     reservoirValue.textContent = result.pool.toFixed(2) + ' kWh';
     reserveValueLabel.textContent = result.reserve.toFixed(2) + ' kWh';
-    caption.innerHTML = 'Pool draining — every uncapped household fills <span class="hi">at once</span>, proportional to score.';
+    caption.innerHTML = 'Pool draining — households commit their <span class="hi">full share or nothing</span>, strictly in priority order.';
   }
 
   function renderFrame(result, c) {
@@ -1384,48 +1394,48 @@ const SCRIPT_SOURCE = `
 
   function fireEvent(result, ev, rank) {
     const e = els[ev.id];
-    const isCeiling = ev.reason === 'ceiling';
-    e.badge.textContent = isCeiling ? ('locked · ' + ordinal(rank)) : 'settled';
-    e.badge.className = 'tank-badge ' + (isCeiling ? 'locked' : 'settled');
-    if (isCeiling) { e.fill.classList.add('at-cap'); }
-    e.pipe.className = 'pipe locked';
-    e.valve.className = 'valve locked';
+    const isCommitted = ev.reason === 'committed';
+    e.badge.textContent = isCommitted ? ('committed · ' + ordinal(rank)) : 'skipped';
+    e.badge.className = 'tank-badge ' + (isCommitted ? 'locked' : 'skipped');
+    if (isCommitted) { e.fill.classList.add('at-cap'); }
+    e.pipe.className = 'pipe ' + (isCommitted ? 'locked' : 'skipped');
+    e.valve.className = 'valve ' + (isCommitted ? 'locked' : 'skipped');
     setStep(ev.id, 'allocated');
 
     const statusCell = document.getElementById('tbl-' + ev.id + '-status');
     if (statusCell) {
-      const c = isCeiling ? STATUS_COLOR.locked : STATUS_COLOR.settled;
-      const bg = isCeiling ? 'var(--status-locked-soft)' : 'var(--status-settled-soft)';
-      statusCell.innerHTML = '<span class="status-pill" style="color:' + c + ';background:' + bg + '">' + (isCeiling ? 'locked · ' + ordinal(rank) : 'settled') + '</span>';
+      const c = isCommitted ? STATUS_COLOR.locked : STATUS_COLOR.skipped;
+      const bg = isCommitted ? 'var(--status-locked-soft)' : '#FDEAEA';
+      statusCell.innerHTML = '<span class="status-pill" style="color:' + c + ';background:' + bg + '">' + (isCommitted ? 'committed · ' + ordinal(rank) : 'skipped') + '</span>';
     }
 
     const row = document.createElement('div');
-    row.className = 'lockrow' + (isCeiling ? '' : ' settled');
+    row.className = 'lockrow' + (isCommitted ? '' : ' settled');
     const amount = result.finalFills[ev.id];
-    const tagClass = isCeiling ? 'locked' : 'settled';
-    const tagText = isCeiling ? 'ceiling' : 'pool empty';
+    const tagClass = isCommitted ? 'locked' : 'skipped';
+    const tagText = isCommitted ? 'full share' : 'not served';
     row.innerHTML =
       '<div class="rank" style="color:' + IDENTITY[ev.id] + '">' + rank + '</div>' +
       '<div class="desc"><span class="name">' + names[ev.id] + '</span>' +
       '<span class="status-tag ' + tagClass + '">' + tagText + '</span><br>' +
-      '<span class="why">' + (isCeiling ? 'hit the ' + result.ceiling.toFixed(1) + ' kWh ceiling' : 'pool ran out first — never reached the ceiling') + '</span></div>' +
+      '<span class="why">' + (isCommitted ? 'committed its full ' + result.ceiling.toFixed(1) + ' kWh share' : 'skipped — remaining pool could not cover its full ' + result.ceiling.toFixed(1) + ' kWh share') + '</span></div>' +
       '<div class="amt" style="color:' + IDENTITY[ev.id] + '">' + amount.toFixed(2) + ' kWh</div>';
     lockorderEl.appendChild(row);
 
     const placeholder = lockorderEl.querySelector('.lockplaceholder');
     if (placeholder) placeholder.remove();
 
-    caption.innerHTML = isCeiling
-      ? '<span class="hi">' + names[ev.id] + '</span> locked at the ceiling — remaining pool re-splits among whoever’s left.'
-      : 'Pool exhausted — <span class="hi">' + names[ev.id] + '</span> settles below the ceiling.';
+    caption.innerHTML = isCommitted
+      ? '<span class="hi">' + names[ev.id] + '</span> committed its full share — remaining pool moves to whoever’s next.'
+      : '<span class="hi">' + names[ev.id] + '</span> skipped — its full share didn’t fit what was left.';
   }
 
   function runSimulationInstant(result) {
     renderFrame(result, result.consumedTotal);
     result.lockOrder.forEach((ev, i) => fireEvent(result, ev, i + 1));
     caption.innerHTML = result.leftover > 0.01
-      ? 'Everyone hit their ceiling with <span class="hi">' + result.leftover.toFixed(2) + ' kWh</span> left unused in the pool.'
-      : 'Pool fully allocated. Queue order above emerged purely from priority score.';
+      ? '<span class="hi">' + result.leftover.toFixed(2) + ' kWh</span> left unused — no remaining household’s full share would fit.'
+      : 'Pool fully committed. Queue order above emerged purely from priority score.';
     statusLine.textContent = 'done · ' + result.consumedTotal.toFixed(2) + ' / ' + result.pool.toFixed(2) + ' kWh drawn';
   }
 
@@ -1457,8 +1467,8 @@ const SCRIPT_SOURCE = `
       } else {
         while (firedCount < result.lockOrder.length) { fireEvent(result, result.lockOrder[firedCount], firedCount + 1); firedCount++; }
         caption.innerHTML = result.leftover > 0.01
-          ? 'Everyone hit their ceiling with <span class="hi">' + result.leftover.toFixed(2) + ' kWh</span> left unused in the pool.'
-          : 'Pool fully allocated. Queue order above emerged purely from priority score.';
+          ? '<span class="hi">' + result.leftover.toFixed(2) + ' kWh</span> left unused — no remaining household’s full share would fit.'
+          : 'Pool fully committed. Queue order above emerged purely from priority score.';
         statusLine.textContent = 'done · ' + result.consumedTotal.toFixed(2) + ' / ' + result.pool.toFixed(2) + ' kWh drawn';
       }
     }
