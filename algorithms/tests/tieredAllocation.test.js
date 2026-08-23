@@ -72,11 +72,25 @@ describe('allocateTiered — the documented hospital scenario', () => {
     assert.ok(Math.abs(result.combinedAllocationKwh.hospital_1 - 8) < 1e-6);
   });
 
-  test('Tier 1 splits the 2 kWh leftover proportional to hardship weight (0.50 vs 0.105)', () => {
+  test('Tier 1 is binary over the 2 kWh leftover: h1 (higher hardship, cap 6) does not fit and is skipped, h2 (cap 6) also does not fit', () => {
     const result = allocateTiered(households, 10, HARDSHIP_POLICY_V1);
-    // 0.50/0.605 * 2 = 1.652893..., 0.105/0.605 * 2 = 0.347107...
-    assert.ok(Math.abs(result.combinedAllocationKwh.h1 - 1.652893) < 1e-4);
-    assert.ok(Math.abs(result.combinedAllocationKwh.h2 - 0.347107) < 1e-4);
+    // Neither h1 nor h2's 6 kWh cap fits in the 2 kWh Tier 1 leftover —
+    // binary allocation means both get zero rather than a partial share.
+    assert.equal(result.combinedAllocationKwh.h1, 0);
+    assert.equal(result.combinedAllocationKwh.h2, 0);
+    assert.ok(Math.abs(result.leftoverKwh - 2) < 1e-6);
+  });
+
+  test('Tier 1 binary skip-and-continue: the higher-hardship household whose cap exactly fits is served, the other is skipped', () => {
+    const mixedCapHouseholds = households.map((h) => {
+      if (h.id === 'h1') return { ...h, capKwh: 2 }; // exactly matches the 2 kWh leftover
+      return h; // h2 keeps capKwh 6, won't fit once h1 has taken the leftover
+    });
+    const result = allocateTiered(mixedCapHouseholds, 10, HARDSHIP_POLICY_V1);
+    // h1 has the higher hardship weight (0.50 vs h2's 0.105), is tried
+    // first against the 2 kWh Tier 1 leftover, and its cap fits exactly.
+    assert.ok(Math.abs(result.combinedAllocationKwh.h1 - 2) < 1e-6);
+    assert.equal(result.combinedAllocationKwh.h2, 0);
   });
 
   test('the split is a genuine bypass, not just a priority weight: scarce pool still serves the hospital first', () => {
@@ -114,12 +128,15 @@ describe('allocateTiered — multiple Tier 0 households', () => {
 describe('allocateTiered — edge cases', () => {
   test('no Tier 0 households: behaves exactly like a plain Tier-1-only allocation', () => {
     const households = [
-      { id: 'a', life_support_flag: 0, income_gap: 0.5, area_disadvantage: 0.5, payment_difficulty: 0.5, energy_burden: 0.5, no_solar_access: 0.5, capKwh: 10 },
-      { id: 'b', life_support_flag: 0, income_gap: 0.1, area_disadvantage: 0.1, payment_difficulty: 0.1, energy_burden: 0.1, no_solar_access: 0.1, capKwh: 10 },
+      { id: 'a', life_support_flag: 0, income_gap: 0.5, area_disadvantage: 0.5, payment_difficulty: 0.5, energy_burden: 0.5, no_solar_access: 0.5, capKwh: 5 },
+      { id: 'b', life_support_flag: 0, income_gap: 0.1, area_disadvantage: 0.1, payment_difficulty: 0.1, energy_burden: 0.1, no_solar_access: 0.1, capKwh: 5 },
     ];
     const result = allocateTiered(households, 5, HARDSHIP_POLICY_V1);
     assert.equal(result.tier0Result, null);
-    assert.ok(Math.abs(result.combinedAllocationKwh.a + result.combinedAllocationKwh.b - 5) < 1e-6);
+    // Binary allocation: only the higher-hardship household ('a') fits
+    // the 5 kWh pool; 'b' is skipped rather than taking a partial share.
+    assert.equal(result.combinedAllocationKwh.a, 5);
+    assert.equal(result.combinedAllocationKwh.b, 0);
   });
 
   test('no Tier 1 households: pool leftover after Tier 0 is reported honestly, not silently dropped', () => {

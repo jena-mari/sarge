@@ -1,71 +1,38 @@
 /**
- * Single-pool Nash welfare allocation via closed-form water-filling —
- * pure JS port and N-household generalization of
- * `algorithm/simple_nash_allocation.py`.
+ * Single-pool priority-queue allocation — binary, all-or-nothing.
  *
- * WHY A CLOSED FORM INSTEAD OF THE CONVEX SOLVER
- * -----------------------------------------------
- * `engine/nash_welfare.py` solves the general multi-source case exactly
- * via the Eisenberg-Gale convex program (requires `cvxpy`, Python-only —
- * not ported here). For the common single-pool case (one shared supply
- * number, no per-source eligibility), maximizing
- * `sum_i weight_i * log(x_i)` subject to `sum_i x_i = pool` has exactly
- * one stationary point, found by a Lagrange multiplier: `x_i = weight_i
- * / lambda`, giving the closed form
+ * Supersedes the earlier proportional Nash-welfare water-filling
+ * approach. That approach split the pool fractionally across every
+ * household by weight, so a household could receive a partial share
+ * (some kWh, but less than its cap). Product decided that's the wrong
+ * shape for this pool: a household should either be fully supplied up
+ * to its committed cap, or receive nothing — never a partial delivery.
  *
- *     x_i = (weight_i / sum(all weights)) * pool
+ * ALGORITHM
+ * ---------
+ *   1. Sort households descending by priority weight (ties broken by
+ *      id, for determinism).                                — O(n log n)
+ *   2. Walk the sorted list with a running `remaining` pool balance.
+ *      For each household, in priority order:
+ *        - if its full capKwh fits within what's left, commit the
+ *          full cap and subtract it from the running balance.
+ *        - otherwise, skip it (it receives 0) and move on to the next
+ *          household — a lower-priority household with a smaller cap
+ *          may still fit in the pool that's left.          — O(n)
  *
- * With per-household caps, this needs water-filling: every household's
- * allocation follows `x_i = min(weight_i * t, cap_i)` for a single shared
- * water level `t`, and `t` is exactly determined by the requirement that
- * total delivered energy equals the pool (or that everyone is capped,
- * if the pool is a surplus). This is still the exact Nash-welfare
- * optimum, not an approximation — a single-pool problem with linear
- * caps has no other place the true maximum can land.
+ * This "skip and continue" rule (rather than stopping the whole queue
+ * at the first household that doesn't fit) is a deliberate choice: it
+ * still respects priority order strictly (nobody is ever skipped in
+ * favor of a lower-priority household when they themselves would have
+ * fit), while not wasting pool capacity that a smaller downstream
+ * request could still fully use.
  *
- * ALGORITHM — O(n log n), NOT the O(n²) round-by-round version this
- * used to be
- * -----------------------------------------------------------------------
- * An earlier version of this function found `t` by repeatedly: give
- * everyone their current proportional share, lock whoever hits their cap,
- * recompute the total active weight, repeat. That's correct, but each
- * round rescans every still-active household, and in the worst case
- * (households cap out one at a time) that's O(n) rounds of O(n) work —
- * O(n²) overall. Measured directly: ~19ms at 1,000 households, ~3.3
- * seconds at 10,000, and it did not finish within 2 minutes at 50,000.
- *
- * The fix doesn't change the math, only how `t` is found. For household
- * i, define `threshold_i = cap_i / weight_i` — the water level at which
- * household i's proportional share would exactly reach its cap.
- * Households with a lower threshold cap out at a lower water level, so
- * sorting ascending by threshold turns "who caps out when" into a single
- * ordered sweep instead of repeated rescans:
- *
- *   1. Sort households ascending by threshold_i.                — O(n log n)
- *   2. Walk the sorted list, tracking the cumulative kWh already
- *      committed to households capped so far, and the total weight of
- *      households not yet capped (via a precomputed suffix sum).
- *      At each household k, check whether the pool would already be
- *      exhausted by the time the water level reaches threshold_k. If
- *      not, household k genuinely caps out — commit its cap and move on.
- *      If so, the true water level falls at or before threshold_k: solve
- *      the remaining linear split directly and stop.               — O(n)
- *
- * This produces the identical allocation (verified against every
- * hand-computed test case already in this suite, plus the same KKT
- * optimality check used elsewhere in this codebase) in O(n log n)
- * instead of O(n²) — ~2ms at 1,000 households, ~40ms at 10,000 in
- * re-measurement after this rewrite.
- *
- * VERIFIED, NOT JUST ASSERTED: this implementation (in its earlier
- * demo-script form) was fuzz-tested against 20,000 randomized scenarios
- * (0 invariant violations) and cross-validated against the actual
- * `cvxpy` convex solver in `nash_welfare.py` across 60 randomized
- * scenarios (max discrepancy 0.00035 kWh — solver tolerance noise,
- * independently re-confirmed at 0.00049 kWh max across a fresh 300-trial
- * run against a third, from-scratch reference implementation). See
- * algorithms/tests/nashWelfareSinglePool.test.js for the same
- * cross-checks re-run in this codebase.
+ * Conservation, cap-respecting, and priority-monotonicity (under equal
+ * caps) all still hold and are fuzz-tested exactly as before — see
+ * algorithms/tests/nashWelfareSinglePool.test.js. The Nash-welfare KKT
+ * optimality property no longer applies (it was specific to the
+ * proportional split), so those checks were removed rather than kept
+ * as dead assertions.
  */
 
 const EPSILON = 1e-9;
@@ -74,14 +41,14 @@ const EPSILON = 1e-9;
  * @typedef {Object} PoolHousehold
  * @property {string} id
  * @property {number} weight strictly positive priority weight (e.g. from computePriorityWeight)
- * @property {number} capKwh most this household can usefully receive
+ * @property {number} capKwh the full amount this household must receive, or nothing
  */
 
 /**
  * @typedef {Object} SinglePoolAllocationResult
- * @property {Record<string, number>} allocationKwh householdId -> kWh
- * @property {number} leftoverKwh unallocated pool (only nonzero when every household is exactly at its cap)
- * @property {{ id: string, consumedAt: number, reason: 'cap' | 'poolExhausted' }[]} lockOrder the order households became fixed, and why
+ * @property {Record<string, number>} allocationKwh householdId -> kWh (always either 0 or that household's capKwh)
+ * @property {number} leftoverKwh unallocated pool — nonzero whenever the remaining balance couldn't fully cover any still-unserved household
+ * @property {{ id: string, consumedAt: number, reason: 'committed' | 'skipped' }[]} lockOrder priority-sorted order households were decided, and why
  * @property {number} consumedTotalKwh
  */
 
@@ -105,8 +72,55 @@ export function nashWelfareSinglePoolAllocate(households, poolKwh) {
     return { allocationKwh: {}, leftoverKwh: poolKwh, lockOrder: [], consumedTotalKwh: 0 };
   }
 
-  // Sort ascending by threshold_i = capKwh / weight — the water level at
-  // which household i's proportional share exactly reaches its cap.
+  // Highest priority weight first; ties broken by id for determinism.
+  const sorted = [...households].sort((a, b) => b.weight - a.weight || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  const allocationKwh = {};
+  const lockOrder = [];
+  let remaining = poolKwh;
+  let consumedTotal = 0;
+
+  for (const h of sorted) {
+    if (h.capKwh <= remaining + EPSILON) {
+      allocationKwh[h.id] = h.capKwh;
+      remaining = Math.max(0, remaining - h.capKwh);
+      consumedTotal += h.capKwh;
+      lockOrder.push({ id: h.id, consumedAt: consumedTotal, reason: 'committed' });
+    } else {
+      allocationKwh[h.id] = 0;
+      lockOrder.push({ id: h.id, consumedAt: consumedTotal, reason: 'skipped' });
+    }
+  }
+
+  return { allocationKwh, leftoverKwh: remaining, lockOrder, consumedTotalKwh: consumedTotal };
+}
+
+/**
+ * The original proportional Nash-welfare water-filling allocator,
+ * kept for callers that still need a guaranteed-nonzero partial share
+ * rather than binary all-or-nothing — currently `tieredAllocation.js`'s
+ * Tier 0 (life-support/hospital bypass), where a household should never
+ * be reduced to exactly zero just because its full demand doesn't fit
+ * the pool. See git history / `nashWelfareSinglePoolAllocate`'s prior
+ * version for the full O(n log n) derivation this is unchanged from.
+ *
+ * Maximizes `sum_i weight_i * log(x_i)` subject to `sum_i x_i = pool`
+ * and `0 <= x_i <= cap_i`: every household's allocation follows
+ * `x_i = min(weight_i * t, cap_i)` for a single shared water level `t`,
+ * solved in O(n log n) by sorting ascending on `threshold_i = cap_i /
+ * weight_i` and sweeping once.
+ *
+ * @param {PoolHousehold[]} households
+ * @param {number} poolKwh total energy available this period
+ * @returns {SinglePoolAllocationResult}
+ */
+export function proportionalNashWelfareAllocate(households, poolKwh) {
+  validate(households, poolKwh);
+
+  if (households.length === 0) {
+    return { allocationKwh: {}, leftoverKwh: poolKwh, lockOrder: [], consumedTotalKwh: 0 };
+  }
+
   const sorted = [...households].sort((a, b) => a.capKwh / a.weight - b.capKwh / b.weight);
   const n = sorted.length;
   const totalCap = sorted.reduce((sum, h) => sum + h.capKwh, 0);
@@ -115,7 +129,6 @@ export function nashWelfareSinglePoolAllocate(households, poolKwh) {
   const lockOrder = [];
 
   if (poolKwh >= totalCap - EPSILON) {
-    // Surplus: every household reaches its cap, the rest is leftover.
     for (const h of sorted) {
       allocationKwh[h.id] = h.capKwh;
       lockOrder.push({ id: h.id, consumedAt: totalCap, reason: 'cap' });
@@ -128,25 +141,18 @@ export function nashWelfareSinglePoolAllocate(households, poolKwh) {
     };
   }
 
-  // Suffix sum of weight over sorted[k..n-1] — the total weight still
-  // "active" (not yet capped) if households 0..k-1 have already capped.
   const suffixWeight = new Array(n + 1).fill(0);
   for (let i = n - 1; i >= 0; i--) suffixWeight[i] = suffixWeight[i + 1] + sorted[i].weight;
 
-  let cumCapped = 0; // kWh already committed to households capped so far
+  let cumCapped = 0;
 
   for (let k = 0; k < n; k++) {
     const h = sorted[k];
     const thresholdK = h.capKwh / h.weight;
     const remActiveWeight = suffixWeight[k];
-    // Total that would be distributed if the water level reached exactly
-    // threshold_k: households already capped keep their fixed amounts,
-    // and every still-active household (k..n-1) follows weight * t.
     const totalAtThresholdK = cumCapped + remActiveWeight * thresholdK;
 
     if (totalAtThresholdK >= poolKwh - EPSILON) {
-      // The true water level falls at or before this household's
-      // threshold — solve the remaining linear split directly and stop.
       const t = remActiveWeight > EPSILON ? (poolKwh - cumCapped) / remActiveWeight : 0;
       for (let j = k; j < n; j++) {
         const hh = sorted[j];
@@ -158,16 +164,11 @@ export function nashWelfareSinglePoolAllocate(households, poolKwh) {
       return { allocationKwh, leftoverKwh: 0, lockOrder, consumedTotalKwh: poolKwh };
     }
 
-    // Household k genuinely caps out before the pool is exhausted.
     allocationKwh[h.id] = h.capKwh;
     cumCapped += h.capKwh;
     lockOrder.push({ id: h.id, consumedAt: cumCapped, reason: 'cap' });
   }
 
-  // Unreachable in practice (the loop's last iteration always satisfies
-  // totalAtThresholdK === totalCap > poolKwh, which triggers the branch
-  // above) — kept as a defensive fallback rather than silently dropping
-  // households if that invariant is ever violated by a future edit.
   return {
     allocationKwh,
     leftoverKwh: Math.max(0, poolKwh - cumCapped),
@@ -178,7 +179,7 @@ export function nashWelfareSinglePoolAllocate(households, poolKwh) {
 
 /**
  * Carves a fixed emergency reserve off the top before running the
- * proportional Nash-welfare split on the rest. See
+ * binary priority-queue allocation on the rest. See
  * ALGORITHM_CONTEXT.md §4 for why this pattern (reserve first, fair-share
  * the remainder) is standard practice, not a bespoke addition — AEMO's
  * RERT/spinning-reserve mechanism, the Nash bargaining disagreement
