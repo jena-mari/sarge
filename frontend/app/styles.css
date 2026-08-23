@@ -632,16 +632,16 @@ body{background:var(--sarge-bg);color:var(--sarge-text)}
 @media(max-width:760px){.nav-wrap{padding:0 12px}.navbar{height:62px}.credit-card,.report-card,.energy-panel,.pledge-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div{border-radius:12px}.support-intake__hero-copy,.support-intake__start-card,.support-intake__progress,.support-intake__panel,.property-step__card{border-radius:12px}}
 
 /* Wollongong motion panel replaces the family illustration */
-.landing-hero__gong-video{z-index:2;left:auto;right:-2px;top:50%;bottom:auto;width:46%;height:68%;max-width:none;max-height:none;border:6px solid rgba(255,255,255,.94);border-right-width:0;border-radius:28px 0 0 28px;background:#d8e2e5;object-fit:cover;object-position:center;box-shadow:0 18px 50px rgba(20,37,54,.16);transform:translateY(-45%);opacity:1;animation:none;pointer-events:none}
+.landing-hero__gong-video{z-index:2;left:auto;right:-2px;top:50%;bottom:auto;width:46%;height:68%;max-width:none;max-height:none;border:6px solid rgba(255,255,255,.94);border-right-width:0;border-radius:28px 0 0 28px;background:#d8e2e5;object-fit:cover;object-position:center;box-shadow:0 18px 50px rgba(20,37,54,.16);transform:translateY(-50%);opacity:1;animation:none;pointer-events:none}
 .landing-hero__content{width:min(47%,680px)}
-@media(max-width:900px){.landing-hero__gong-video{right:-2px;width:48%;height:62%;transform:translateY(-42%)}.landing-hero__content{width:48%}}
+@media(max-width:900px){.landing-hero__gong-video{right:-2px;width:48%;height:62%;transform:translateY(-50%)}.landing-hero__content{width:48%}}
 @media(max-width:760px){.landing-hero__content{top:31%;width:auto;transform:translateY(-50%)}.landing-hero__content h1{font-size:clamp(2.9rem,13vw,4rem)}.landing-hero__content p{max-width:92%;font-size:.9rem}.landing-hero__gong-video{left:16px;right:16px;top:auto;bottom:14px;width:calc(100% - 32px);height:35%;border-width:4px;border-radius:18px;transform:none}.landing-hero__actions{margin-top:18px}}
 
 /* Pointer-reactive energy glow */
 .landing-hero{--glow-x:32%;--glow-y:58%;--panel-x:0px;--panel-y:0px}
 .landing-hero:before{content:'';position:absolute;inset:-12%;z-index:-1;pointer-events:none;background:radial-gradient(circle at var(--glow-x) var(--glow-y),rgba(255,255,255,.72) 0,rgba(222,239,255,.38) 20%,transparent 44%),radial-gradient(circle at calc(100% - var(--glow-x)) calc(100% - var(--glow-y)),rgba(22,114,232,.3) 0,rgba(112,176,240,.16) 23%,transparent 48%);filter:blur(10px) saturate(108%);opacity:.9;will-change:background}
-.landing-hero__gong-video{transform:translateY(-45%) translate3d(var(--panel-x),var(--panel-y),0);transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .3s ease}
+.landing-hero__gong-video{transform:translateY(-50%) translate3d(var(--panel-x),var(--panel-y),0);transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .3s ease}
 .landing-hero:hover .landing-hero__gong-video{box-shadow:0 22px 62px rgba(20,37,54,.2)}
-@media(max-width:900px){.landing-hero__gong-video{transform:translateY(-42%) translate3d(var(--panel-x),var(--panel-y),0)}}
+@media(max-width:900px){.landing-hero__gong-video{transform:translateY(-50%) translate3d(var(--panel-x),var(--panel-y),0)}}
 @media(max-width:760px){.landing-hero:before{inset:-6%;filter:blur(14px);opacity:.62}.landing-hero__gong-video{transform:translate3d(0,0,0)}}
 @media(prefers-reduced-motion:reduce){.landing-hero__gong-video{transition:none}.landing-hero:before{filter:none}}
