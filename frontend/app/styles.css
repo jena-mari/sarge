@@ -520,3 +520,21 @@ body{background:#f2f2f3;font-weight:400}.landing-hero{width:calc(100% - 64px);he
 .civic-rate-tile b,.confirm-donation-equation b{color:#0071e3}
 @media(max-width:1100px){.property-step{height:auto;min-height:100svh;overflow:auto}.property-step__types,.data-source-step__methods{grid-template-columns:repeat(2,minmax(0,1fr))}.property-step__form{grid-template-columns:repeat(2,minmax(0,1fr))}.pledge-step__layout{grid-template-columns:1fr}}
 @media(max-width:700px){.property-step{padding:10px}.property-step__nav{gap:10px}.property-step__contact{display:inline-flex}.step-dots span,.step-dots span.active{width:16px}.property-step__card{padding:18px 14px;border-radius:20px}.property-step__top{margin-bottom:14px}.property-step__back,.property-step__top-continue{min-height:36px;padding:0 12px;font-size:.76rem}.property-step h1,.property-step .data-source-step__title,.property-step .eligibility-step__title{font-size:clamp(2rem,10.5vw,2.8rem)!important;margin-bottom:18px!important}.property-step__types,.data-source-step__methods,.property-step__form{grid-template-columns:1fr}.property-step__types button{height:76px;min-height:76px}.data-source-card{min-height:94px}.pledge-step__metrics{grid-template-columns:1fr}.confirm-donation-equation{gap:8px}.confirm-donation-grid,.civic-rate-grid{grid-template-columns:1fr}}
+
+/* Final palette, lockup and animated welcome corrections */
+.support-intake{--support-purple:#0071e3;--support-lime:#edf6ff;--support-soft-purple:#edf6ff;--support-soft-lime:#f5f5f7;background:radial-gradient(circle at 7% 0,rgba(182,220,255,.38),transparent 27rem),radial-gradient(circle at 96% 96%,rgba(210,230,249,.34),transparent 30rem),#f5f5f7}
+.support-intake__brand{grid-template-columns:30px auto 1px auto;gap:10px}
+.support-intake__brand img{width:30px;height:30px;object-fit:contain}
+.support-intake__brand span{font-size:0;font-weight:650;line-height:1}
+.support-intake__brand span:after{content:'Sarge';font-family:'Sarge Outfit',sans-serif;font-size:1.3rem;font-weight:650;letter-spacing:.005em}
+.support-intake__brand:before{width:1px;height:34px;background:#111}
+.support-intake__brand:after{content:'Wollongong Renewable\A Energy Ecosystem';color:#111;font-family:'Sarge Outfit',sans-serif;font-size:.66rem;font-weight:500;line-height:1.08;letter-spacing:.005em}
+.support-intake__eligibility-note{border:1px solid rgba(0,113,227,.12);background:#edf6ff;color:#3a3a3c;font-weight:450}
+.support-intake__success-mark{border:0;background:#edf6ff;color:#0071e3}
+.support-intake__notice{border:1px solid rgba(0,113,227,.1);background:#edf6ff;color:#1d1d1f}
+.support-intake__toggle span{border-color:#0071e3}
+.support-intake__toggle.active span:after,.support-intake__progress em{background:#0071e3}
+.support-intake__yes-no button.active,.support-intake__chips button.active{border-color:rgba(0,113,227,.32);background:#edf6ff;color:#0066cc}
+.landing-hero__background{display:block!important;visibility:visible;opacity:1;animation:none;will-change:auto}
+@media(prefers-reduced-motion:reduce){.landing-hero__background{display:block!important}.landing-hero__illustration{animation:none!important}}
+@media(max-width:680px){.support-intake__brand{grid-template-columns:25px auto 1px auto;gap:7px}.support-intake__brand img{width:25px;height:25px}.support-intake__brand span:after{font-size:1.08rem}.support-intake__brand:before{height:28px}.support-intake__brand:after{font-size:.54rem}}
