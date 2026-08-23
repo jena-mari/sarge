@@ -11,7 +11,8 @@
     "start": "vinext start",
     "vercel-build": "next build",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "test:algorithms": "node --test algorithms/tests/*.test.js"
+    "test:algorithms": "node --test algorithms/tests/*.test.js",
+    "test:backend": "node --test backend/tests/clients/*.test.js"
   },
   "dependencies": {
     "lucide-react": "^0.542.0",

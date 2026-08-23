@@ -32,6 +32,16 @@ export default function Methodology() {
         algorithm and safeguards were chosen — with every claim sourced inline and listed in full below.
       </p>
 
+      <div className="page-title max-w-4xl">
+        <p className="eyebrow">Algorithm · Hardship score</p>
+        <h1>Data provenance dossier</h1>
+      </div>
+      <DataProvenanceBody />
+
+      <div className="page-title max-w-4xl" style={{ marginTop: '3rem' }}>
+        <p className="eyebrow">Algorithm · Allocation</p>
+        <h1>Why Nash welfare, and the emergency reserve</h1>
+      </div>
       <article className="bg-white rounded-[28px] p-7 max-w-3xl leading-relaxed text-[15px]">
         <h2 className="text-lg font-bold mt-0 mb-2">How the priority score is calculated</h2>
         <p className="mb-4">
@@ -40,7 +50,8 @@ export default function Methodology() {
           payment difficulty ×0.20, energy burden ×0.15, no-solar-access ×0.10, summing to 1.00), unless{' '}
           <code className="bg-black/5 rounded px-1.5 py-0.5 text-[0.85em]">life_support_flag</code> or{' '}
           <code className="bg-black/5 rounded px-1.5 py-0.5 text-[0.85em]">is_high_need_area</code> is set —
-          either forces the score straight to 1.00, a hard override, not just a maximum input.
+          either forces the score straight to 1.00, a hard override, not just a maximum input. See the data
+          provenance dossier above for exactly where each of those five factors comes from.
         </p>
 
         <h2 className="text-lg font-bold mt-8 mb-2">Why Nash welfare, not a simpler split</h2>
@@ -83,12 +94,6 @@ export default function Methodology() {
           ))}
         </ol>
       </article>
-
-      <div className="page-title max-w-4xl" style={{ marginTop: '3rem' }}>
-        <p className="eyebrow">Algorithm · Hardship score</p>
-        <h1>Data provenance dossier</h1>
-      </div>
-      <DataProvenanceBody />
 
       <p className="text-xs text-[var(--muted)] mt-6">
         Implementation: <code className="bg-black/5 rounded px-1.5 py-0.5">algorithms/src/scoring/hardshipScore.js</code> and{' '}

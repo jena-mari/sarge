@@ -39,6 +39,46 @@ describe('computeHardshipScore — weighted formula', () => {
   });
 });
 
+describe('computeHardshipScore — out-of-range inputs are rejected, not silently clamped', () => {
+  // Regression coverage for a real gap found by direct testing: a factor
+  // value of 25.0 — the signature of an upstream normalization bug, e.g.
+  // a raw dollar figure reaching this function instead of a 0-1 ratio —
+  // used to clamp silently to 1.0, indistinguishable from a household
+  // that's genuinely at maximum hardship on that factor.
+  test('a factor far above 1 throws a RangeError rather than clamping to 1.0', () => {
+    const h = { id: 'bad-high', income_gap: 25.0, area_disadvantage: 0.5, payment_difficulty: 0.5, energy_burden: 0.5, no_solar_access: 0.5 };
+    assert.throws(() => computeHardshipScore(h, HARDSHIP_POLICY_V1), RangeError);
+  });
+
+  test('a negative factor throws a RangeError rather than clamping to 0.0', () => {
+    const h = { id: 'bad-low', income_gap: -3.0, area_disadvantage: 0.5, payment_difficulty: 0.5, energy_burden: 0.5, no_solar_access: 0.5 };
+    assert.throws(() => computeHardshipScore(h, HARDSHIP_POLICY_V1), RangeError);
+  });
+
+  test('values at the exact boundary (0 and 1) are still accepted', () => {
+    const h = { id: 'boundary', income_gap: 0, area_disadvantage: 1, payment_difficulty: 0, energy_burden: 1, no_solar_access: 0.5 };
+    assert.doesNotThrow(() => computeHardshipScore(h, HARDSHIP_POLICY_V1));
+  });
+
+  test('tiny float noise just past the boundary (e.g. 1.0000000001) is tolerated, not rejected', () => {
+    const h = { id: 'float-noise', income_gap: 1 + 1e-12, area_disadvantage: 0.5, payment_difficulty: 0.5, energy_burden: 0.5, no_solar_access: 0.5 };
+    assert.doesNotThrow(() => computeHardshipScore(h, HARDSHIP_POLICY_V1));
+  });
+
+  test('an out-of-range factor still throws even when it would not have changed the outcome much', () => {
+    // Guards against a "clamp first, validate second" regression — the
+    // point is to catch bad data regardless of how much it would have
+    // moved the final score.
+    const h = { id: 'small-overshoot', income_gap: 1.2, area_disadvantage: 0, payment_difficulty: 0, energy_burden: 0, no_solar_access: 0 };
+    assert.throws(() => computeHardshipScore(h, HARDSHIP_POLICY_V1), RangeError);
+  });
+
+  test('override flags short-circuit before range validation runs (a life-support household with garbage factor data still gets 1.0, not an error)', () => {
+    const h = { id: 'override-with-bad-data', life_support_flag: 1, income_gap: 999, area_disadvantage: -50, payment_difficulty: 0.5, energy_burden: 0.5, no_solar_access: 0.5 };
+    assert.equal(computeHardshipScore(h, HARDSHIP_POLICY_V1), 1.0);
+  });
+});
+
 describe('computeHardshipScore — hard overrides', () => {
   test('life_support_flag forces score to 1.0 regardless of low weighted factors', () => {
     const [, , , , e] = SAMPLE_HOUSEHOLDS_HARDSHIP;

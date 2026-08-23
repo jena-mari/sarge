@@ -7,6 +7,25 @@
  * algorithms/src/README.md). Every function takes an explicit policy
  * object rather than importing a fixed one, so a caller can pin a past
  * policy version for reproducibility.
+ *
+ * OUT-OF-RANGE INPUTS ARE REJECTED, NOT SILENTLY CLAMPED
+ * ---------------------------------------------------------
+ * Each hardship factor is documented as "0-1, pre-normalized" — that's a
+ * contract the caller's upstream normalization is supposed to guarantee.
+ * An earlier version of this function only enforced that contract
+ * implicitly, via `Math.max(0, Math.min(1, score))` on the final
+ * weighted sum: a factor value of 25.0 (the unmistakable signature of a
+ * normalization bug — e.g. a raw dollar figure fed in where a 0-1 ratio
+ * was expected) silently clamped to a plausible-looking 1.0, identical
+ * to a household that's genuinely at maximum hardship on that factor.
+ * That's the opposite of trustworthy: a real data-pipeline bug becomes
+ * invisible instead of surfacing. Every other bad-input case in this
+ * codebase already throws loudly (missing factors, non-positive
+ * weights, negative caps) — this brings out-of-range factors in line
+ * with that, rather than being the one silent exception. The clamp
+ * stays on the *final* weighted sum purely as float-noise insurance
+ * (e.g. 0.9999999998 from floating-point accumulation), not as a
+ * substitute for validating each input.
  */
 
 /**
@@ -44,9 +63,17 @@ export function computeHardshipScore(household, policy) {
     if (typeof value !== 'number' || Number.isNaN(value)) {
       throw new TypeError(`Household ${household.id}: missing or invalid factor "${factor}"`);
     }
+    if (value < -1e-9 || value > 1 + 1e-9) {
+      throw new RangeError(
+        `Household ${household.id}: factor "${factor}" = ${value} is outside the expected [0, 1] range. ` +
+          `This almost always means an upstream normalization bug (e.g. a raw, un-normalized figure reaching ` +
+          `this function instead of a 0-1 proportion) — fix the input rather than relying on clamping, since ` +
+          `silently clamping this would make a bad-data bug indistinguishable from genuine maximum hardship.`
+      );
+    }
     score += weight * value;
   }
-  return clamp01(score);
+  return clamp01(score); // float-noise insurance only — see module docstring
 }
 
 /**
