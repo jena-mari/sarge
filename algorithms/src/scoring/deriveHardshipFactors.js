@@ -35,12 +35,18 @@
  *   typical arrears range ($1,800-$3,500) from one real pilot program
  *   [Assessment p.10] but no formula for turning arrears into a 0-1
  *   score — the linear scaling here is our own choice, not Council's.
- * - area_disadvantage / no_solar_access: derived from real, cited
- *   suburb-level statistics (the priority-suburb list and per-suburb
- *   solar density), but applied at the suburb level, not the household
- *   level — see the methodology note on each function below for why
+ * - area_disadvantage: fully data-backed as of v2 — a real ABS SEIFA
+ *   Index of Relative Socio-economic Disadvantage (IRSD) 2021 national
+ *   percentile, published per Wollongong suburb by profile.id.com.au
+ *   (see `wollongongEquityDataV2.js` for why this supersedes both the
+ *   original suburb-list version of this factor and the SA2-level
+ *   alternative). Still applied at the suburb level, not the household
+ *   level — see the methodology note on the function below for why
  *   that's a deliberate, bounded use of ecological data rather than a
  *   shortcut.
+ * - no_solar_access: derived from real, cited per-suburb solar
+ *   installation figures (`wollongongEquityDataV1.js`), applied at the
+ *   suburb level for the same bounded-proxy reason as area_disadvantage.
  *
  * Every function throws on invalid input rather than silently clamping
  * — consistent with hardshipScore.js's own validation philosophy (see
@@ -55,8 +61,8 @@ import {
   TYPICAL_ARREARS_RANGE_DOLLARS,
   LGA_RESIDENTIAL_SOLAR_DENSITY_PCT,
   PRIORITY_SUBURBS,
-  isPrioritySuburb,
 } from '../../policies/wollongongEquityDataV1.js';
+import { getSeifaForSuburb } from '../../policies/wollongongEquityDataV2.js';
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, value));
@@ -133,23 +139,35 @@ export function derivePaymentDifficultyFactor(currentArrearsDollars) {
 }
 
 /**
- * area_disadvantage, from the Assessment's named priority-suburb list
- * rather than a fabricated SEIFA percentile — the source ranks suburbs
- * by SEIFA score but the percentile values themselves weren't in the
- * material available to this project. A suburb on the list scores 0.8
- * (high but not automatically 1.0 — an individual household's own
- * income/burden/arrears factors still carry more weight in the overall
- * score, per the AHP reasoning discussed separately); a suburb not on
- * the list scores a low baseline, since most Wollongong suburbs are not
- * flagged as high-disadvantage.
+ * area_disadvantage, from real ABS SEIFA Index of Relative
+ * Socio-economic Disadvantage (IRSD) 2021 percentiles at the
+ * individual-suburb ("profile area") level — see
+ * `wollongongEquityDataV2.js` for the full citation and for why this
+ * supersedes both the earlier suburb-list version of this function and
+ * the SA2-level alternative discussed in `system_audit_vs_real_data.md`.
  *
- * METHODOLOGY NOTE: this is suburb-level (ecological) data applied to
- * every household in that suburb alike. That's a deliberate, bounded
- * choice — it's exactly the kind of area-level proxy the AHP weighting
- * discussion assigned a low-but-nonzero weight to, specifically because
- * it can't distinguish a struggling household from a comfortable one on
- * the same street. Don't raise this factor's weight in the hardship
- * policy without also reconsidering that reasoning.
+ * The factor is simply 1 minus the suburb's published national
+ * percentile (0-100 -> 0-1), so a suburb at the 2nd percentile
+ * (Warrawong — more disadvantaged than 98% of Australian suburbs)
+ * scores 0.98, and a suburb at the 92nd percentile (Cordeaux Heights)
+ * scores 0.08. Nothing here is re-derived or re-scaled: the published
+ * percentile is used directly, so every score is checkable against the
+ * source PDF. A suburb not individually published in the source falls
+ * back to the Wollongong City LGA-wide percentile (42), scoring 0.58 —
+ * the LGA itself sits slightly below the national median, so an
+ * unlisted Wollongong suburb defaults to "slightly more disadvantaged
+ * than an average Australian suburb," not to an arbitrary low baseline
+ * invented for this project.
+ *
+ * METHODOLOGY NOTE: this remains suburb-level (ecological) data applied
+ * to every household in that suburb alike — same bounded-proxy caveat
+ * as before, now backed by a real, checkable ABS-sourced number instead
+ * of a suburb-list heuristic. It's exactly the kind of area-level proxy
+ * the AHP weighting discussion assigned a low-but-nonzero weight to,
+ * specifically because it can't distinguish a struggling household from
+ * a comfortable one on the same street. Don't raise this factor's
+ * weight in the hardship policy without also reconsidering that
+ * reasoning.
  *
  * @param {string} suburb
  * @returns {number}
@@ -158,7 +176,8 @@ export function deriveAreaDisadvantageFactor(suburb) {
   if (typeof suburb !== 'string' || suburb.trim() === '') {
     throw new TypeError(`suburb must be a non-empty string, got ${suburb}`);
   }
-  return isPrioritySuburb(suburb) ? 0.8 : 0.15;
+  const { percentile } = getSeifaForSuburb(suburb);
+  return clamp01(1 - percentile / 100);
 }
 
 /**

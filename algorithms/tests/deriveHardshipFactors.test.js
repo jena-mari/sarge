@@ -99,18 +99,34 @@ describe('derivePaymentDifficultyFactor — scaled against the Save4Good typical
   });
 });
 
-describe('deriveAreaDisadvantageFactor — from the named priority-suburb list, not a fabricated SEIFA percentile', () => {
-  test('a Council-named priority suburb scores 0.8', () => {
-    assert.equal(deriveAreaDisadvantageFactor('Bellambi'), 0.8);
-    assert.equal(deriveAreaDisadvantageFactor('Warrawong'), 0.8);
-    assert.equal(deriveAreaDisadvantageFactor('Cringila'), 0.8);
-    assert.equal(deriveAreaDisadvantageFactor('Koonawarra'), 0.8);
-    assert.equal(deriveAreaDisadvantageFactor('Berkeley'), 0.8);
+describe('deriveAreaDisadvantageFactor — from real ABS SEIFA IRSD 2021 percentiles, not a suburb list', () => {
+  test('Council-named priority suburbs score high, matching their real (severe) SEIFA percentile', () => {
+    assert.ok(close(deriveAreaDisadvantageFactor('Warrawong'), 0.98));
+    assert.ok(close(deriveAreaDisadvantageFactor('Cringila'), 0.97));
+    assert.ok(close(deriveAreaDisadvantageFactor('Bellambi'), 0.95));
+    assert.ok(close(deriveAreaDisadvantageFactor('Koonawarra'), 0.94));
+    assert.ok(close(deriveAreaDisadvantageFactor('Berkeley'), 0.93));
   });
 
-  test('a suburb not on the list scores a low baseline, not 0', () => {
-    assert.equal(deriveAreaDisadvantageFactor('Figtree'), 0.15);
-    assert.equal(deriveAreaDisadvantageFactor('Cordeaux Heights'), 0.15);
+  test('a well-off suburb scores low, using its own real percentile (not a flat baseline)', () => {
+    assert.ok(close(deriveAreaDisadvantageFactor('Cordeaux Heights'), 0.08));
+    assert.ok(close(deriveAreaDisadvantageFactor('Figtree'), 0.25));
+  });
+
+  test('a suburb not individually published falls back to the Wollongong City LGA percentile (42), not an arbitrary low baseline', () => {
+    assert.ok(close(deriveAreaDisadvantageFactor('Some Suburb Not In The Table'), 0.58));
+  });
+
+  test('priority suburbs rank in the same severity order the SEIFA table itself shows', () => {
+    const warrawong = deriveAreaDisadvantageFactor('Warrawong');
+    const cringila = deriveAreaDisadvantageFactor('Cringila');
+    const bellambi = deriveAreaDisadvantageFactor('Bellambi');
+    const koonawarra = deriveAreaDisadvantageFactor('Koonawarra');
+    const berkeley = deriveAreaDisadvantageFactor('Berkeley');
+    assert.ok(warrawong > cringila);
+    assert.ok(cringila > bellambi);
+    assert.ok(bellambi > koonawarra);
+    assert.ok(koonawarra > berkeley);
   });
 
   test('throws on an empty or non-string suburb', () => {

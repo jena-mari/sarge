@@ -19,6 +19,7 @@
 
 import { computeHardshipScore, overrideReason } from '../scoring/hardshipScore.js';
 import { isPrioritySuburb, COUNCIL_ENERGY_BURDEN_TARGET_PCT } from '../../policies/wollongongEquityDataV1.js';
+import { getSeifaForSuburb } from '../../policies/wollongongEquityDataV2.js';
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, value));
@@ -108,7 +109,7 @@ export function explainAllocation({
       : null;
 
   const suburbContext = suburb
-    ? { suburb, isCouncilPrioritySuburb: isPrioritySuburb(suburb) }
+    ? { suburb, isCouncilPrioritySuburb: isPrioritySuburb(suburb), seifa: getSeifaForSuburb(suburb) }
     : null;
 
   const summaryParts = [];
@@ -135,6 +136,11 @@ export function explainAllocation({
   }
   if (suburbContext?.isCouncilPrioritySuburb) {
     summaryParts.push(`${suburbContext.suburb} is one of the five suburbs Council's own Energy Equity Assessment names as highest-priority.`);
+  }
+  if (suburbContext?.seifa && !suburbContext.seifa.isLgaFallback) {
+    summaryParts.push(
+      `${suburbContext.suburb} sits at national SEIFA disadvantage percentile ${suburbContext.seifa.percentile} (ABS Census 2021) — more disadvantaged than ${100 - suburbContext.seifa.percentile}% of Australian suburbs.`
+    );
   }
 
   return {
