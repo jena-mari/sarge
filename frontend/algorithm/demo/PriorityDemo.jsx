@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { WOLLONGONG_DEMO_HOUSEHOLDS } from '../../../algorithms/fixtures/wollongongDemoHouseholds.js';
 
 /*
  * This component is a verbatim embed of the standalone demo
@@ -12,15 +13,67 @@ import { useEffect, useRef } from 'react';
  * retargeting the original bare `body { ... }` rule onto `.pf-page`
  * instead -- the site also defines a global `body` rule, and rather
  * than rely on style-injection order to decide which one wins, this
- * removes the collision outright -- and (3) a spliced-in "Back to
- * Sarge" link. Everything else -- the wizard
- * steps, the fountain animation, the household tabs, the reserve
- * band, all of it -- is byte-identical to the source demo. Do not
- * "clean up" or re-architect this into idiomatic React; that was
- * tried once and it lost the original charm. If the demo itself needs
- * to change, edit the standalone HTML first, verify it there, then
- * re-embed.
+ * removes the collision outright -- (3) a spliced-in "Back to
+ * Sarge" link -- and (4) the five households' data, names, and
+ * per-factor source citations, which now come from real Wollongong
+ * data (see below) instead of generic placeholder numbers. Everything
+ * else -- the wizard steps, the fountain animation, the household
+ * tabs, the reserve band, all of it -- is byte-identical to the
+ * source demo. Do not "clean up" or re-architect this into idiomatic
+ * React; that was tried once and it lost the original charm. If the
+ * demo itself needs to change, edit the standalone HTML first, verify
+ * it there, then re-embed.
  */
+
+/*
+ * Real households, swapped in for the original demo's five generic
+ * placeholder households (A: high hardship via sliders alone, B/D:
+ * differentiated mid-range, C: comfortable/low, E: life-support
+ * override with otherwise-low factors). Chosen from
+ * WOLLONGONG_DEMO_HOUSEHOLDS to preserve that exact pedagogical shape
+ * with genuine data instead of hand-picked numbers:
+ *   A = Coniston   — reaches high hardship via the weighted formula
+ *                    alone, NOT an override (proves the formula itself
+ *                    differentiates hardship — see
+ *                    wollongongDemoHouseholds.js's own comment on this
+ *                    household).
+ *   B = Bellambi   — is_high_need_area override (one of Council's five
+ *                    named priority suburbs).
+ *   C = Cordeaux Heights — comfortable, low hardship, has solar.
+ *   D = Warrawong  — a second, different real suburb hitting the same
+ *                    is_high_need_area override ceiling as B — shows
+ *                    the override tying genuinely different suburbs
+ *                    together, not just repeating one example.
+ *   E = Figtree (life-support register) — life_support_flag override,
+ *                    otherwise comfortable (has solar, no arrears).
+ */
+const DEMO_HOUSEHOLD_IDS = {
+  A: 'wlg-coniston-g',
+  B: 'wlg-bellambi-a',
+  C: 'wlg-cordeaux-heights-e',
+  D: 'wlg-warrawong-b',
+  E: 'wlg-figtree-life-support-f',
+};
+
+function round2(value) {
+  return Math.round(value * 100) / 100;
+}
+
+const REAL_DEFAULTS = {};
+const REAL_FLAG_DEFAULTS = {};
+const REAL_NAMES = {};
+for (const [slot, id] of Object.entries(DEMO_HOUSEHOLD_IDS)) {
+  const h = WOLLONGONG_DEMO_HOUSEHOLDS.find((hh) => hh.id === id);
+  REAL_DEFAULTS[slot] = {
+    income_gap: round2(h.income_gap),
+    area_disadvantage: round2(h.area_disadvantage),
+    payment_difficulty: round2(h.payment_difficulty),
+    energy_burden: round2(h.energy_burden),
+    no_solar_access: round2(h.no_solar_access),
+  };
+  REAL_FLAG_DEFAULTS[slot] = { life_support: h.life_support_flag, high_need: h.is_high_need_area };
+  REAL_NAMES[slot] = h.suburb;
+}
 
 const STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -670,7 +723,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-A" id="fill-A"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Household A</span>
+                <span class="tank-name">Coniston</span>
                 <span class="tank-score" id="scorelabel-A">score 0.00</span>
                 <span class="tank-kwh tank-kwh-A" id="kwh-A">0.00 kWh</span>
               </div>
@@ -682,7 +735,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-B" id="fill-B"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Household B</span>
+                <span class="tank-name">Bellambi</span>
                 <span class="tank-score" id="scorelabel-B">score 0.00</span>
                 <span class="tank-kwh tank-kwh-B" id="kwh-B">0.00 kWh</span>
               </div>
@@ -694,7 +747,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-C" id="fill-C"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Household C</span>
+                <span class="tank-name">Cordeaux Heights</span>
                 <span class="tank-score" id="scorelabel-C">score 0.00</span>
                 <span class="tank-kwh tank-kwh-C" id="kwh-C">0.00 kWh</span>
               </div>
@@ -706,7 +759,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-D" id="fill-D"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Household D</span>
+                <span class="tank-name">Warrawong</span>
                 <span class="tank-score" id="scorelabel-D">score 0.00</span>
                 <span class="tank-kwh tank-kwh-D" id="kwh-D">0.00 kWh</span>
               </div>
@@ -718,7 +771,7 @@ const BODY_HTML = `<div class="pf-page">
                 <div class="tank-fill tank-fill-E" id="fill-E"></div>
               </div>
               <div class="tank-readout">
-                <span class="tank-name">Household E</span>
+                <span class="tank-name">Figtree</span>
                 <span class="tank-score" id="scorelabel-E">score 0.00</span>
                 <span class="tank-kwh tank-kwh-E" id="kwh-E">0.00 kWh</span>
               </div>
@@ -767,72 +820,87 @@ const SCRIPT_SOURCE = `
     { key: 'energy_burden', label: 'Energy burden', weight: 0.15 },
     { key: 'no_solar_access', label: 'No solar access', weight: 0.10 },
   ];
-  const DEFAULTS = {
-    A: { income_gap: 1.00, area_disadvantage: 1.00, payment_difficulty: 0.80, energy_burden: 0.90, no_solar_access: 0.70 },
-    B: { income_gap: 0.50, area_disadvantage: 0.40, payment_difficulty: 0.30, energy_burden: 0.60, no_solar_access: 1.00 },
-    C: { income_gap: 0.10, area_disadvantage: 0.10, payment_difficulty: 0.10, energy_burden: 0.20, no_solar_access: 0.00 },
-    D: { income_gap: 0.70, area_disadvantage: 0.60, payment_difficulty: 0.50, energy_burden: 0.70, no_solar_access: 0.40 },
-    E: { income_gap: 0.20, area_disadvantage: 0.20, payment_difficulty: 0.10, energy_burden: 0.30, no_solar_access: 0.10 },
-  };
+  // Real households from algorithms/fixtures/wollongongDemoHouseholds.js —
+  // see this file's top-of-module comment for which real suburb fills each
+  // slot and why. Every number below is computed by deriveHardshipFactors.js
+  // from that household's own real weekly income, energy cost, arrears,
+  // suburb and solar status — not hand-picked for this demo.
+  const DEFAULTS = ${JSON.stringify(REAL_DEFAULTS)};
   // life_support_flag / is_high_need_area are the two hard-override fields from
   // compute_hardship_score() in scoring_and_tiered_allocation.py: if either is 1,
   // hardship_score is forced to 1.0 and the five weighted factors above are
-  // ignored entirely. Household E is on the life-support register here to make
-  // that override visible — note its weighted-only score (from the sliders
-  // above) would only be ~0.19, yet the flag forces it to 1.00 regardless.
-  const FLAG_DEFAULTS = {
-    A: { life_support: 0, high_need: 0 },
-    B: { life_support: 0, high_need: 0 },
-    C: { life_support: 0, high_need: 0 },
-    D: { life_support: 0, high_need: 0 },
-    E: { life_support: 1, high_need: 0 },
-  };
-  const names = { A: 'Household A', B: 'Household B', C: 'Household C', D: 'Household D', E: 'Household E' };
+  // ignored entirely. Bellambi and Warrawong are real is_high_need_area
+  // overrides (Council-named priority suburbs); Figtree is on the real
+  // life-support register here to make that override visible — note its
+  // weighted-only score (from the sliders above) is only ~0.26, yet the flag
+  // forces it to 1.00 regardless.
+  const FLAG_DEFAULTS = ${JSON.stringify(REAL_FLAG_DEFAULTS)};
+  const names = ${JSON.stringify(REAL_NAMES)};
   const IDENTITY = { A: '#7C6FEF', B: '#F0409E', C: '#F5A623', D: '#14B8A6', E: '#9F1239' };
   const STATUS_COLOR = { locked: '#16A34A', settled: '#64748B' };
   const overrideFlags = {};
   ids.forEach(id => { overrideFlags[id] = { ...FLAG_DEFAULTS[id] }; });
   function isOverridden(id) { return overrideFlags[id].life_support === 1 || overrideFlags[id].high_need === 1; }
 
-  // Type of real-world data source a production deployment would draw each
-  // factor from — illustrative provenance, not a claim these specific figures
-  // were measured.
+  // The real source each factor is actually derived from in
+  // algorithms/src/scoring/deriveHardshipFactors.js and
+  // algorithms/policies/wollongongEquityDataV1-3.js — not illustrative.
   const SOURCES = {
-    income_gap: 'ABS Survey of Income and Housing (SIH), by SA2',
-    area_disadvantage: 'ABS SEIFA 2021 — Index of Relative Socio-economic Disadvantage, by SA2',
-    payment_difficulty: 'Retailer billing system — payment history (cf. AER hardship reporting)',
-    energy_burden: 'ABS Household Expenditure Survey; energy-stress benchmark per ACOSS analysis',
-    no_solar_access: 'Clean Energy Regulator — Small-scale Renewable Energy Scheme, by postcode',
+    income_gap: "Wollongong Energy Equity Assessment — published income brackets ($500/wk, $650/wk)",
+    area_disadvantage: 'ABS SEIFA IRSD 2021 by suburb (SAL), primary source; profile.id by profile area, fallback',
+    payment_difficulty: 'Save4Good pilot (Port Kembla) — typical arrears range $1,800–$3,500, Wollongong Energy Equity Assessment p.10',
+    energy_burden: "Endeavour Energy postcode consumption workbook, vs Council's own 10%-of-income Energy Equity Framework target",
+    no_solar_access: 'Australian PV Institute (APVI) — real per-suburb solar installation/capacity data',
   };
 
-  // Illustrative raw-value reconstructions for demo readability only. The real
-  // system takes these five factors PRE-NORMALIZED to [0,1] as upstream input
-  // (scoring_and_tiered_allocation.py has no defined raw->normalized formula —
-  // it's marked a placeholder, supplied by whatever registration/data source a
-  // deployment uses). The SEIFA decile mapping uses the real ABS SA2 / SEIFA
-  // IRSD convention (decile 1 = most disadvantaged, 10 = least) as a plausible
-  // illustration, not measured data.
-  const SA2_MEDIAN_INCOME = 74000;
+  // Inverts each factor's real formula from deriveHardshipFactors.js back
+  // to an approximate raw figure, so dragging a slider shows what real-world
+  // number that position corresponds to under the actual deployed formula —
+  // not a generic illustration. When a slider sits at a household's real
+  // default, this reproduces that household's own real raw figure (e.g.
+  // Bellambi's default income_gap of 1.00 shows "< $500/wk", matching its
+  // real $480/wk weekly income). Dragging away from the default still uses
+  // the same real formula, just run in reverse — the number shown is always
+  // "what raw figure would produce this exact 0-1 value," never invented.
   function rawContext(key, value) {
     switch (key) {
       case 'income_gap': {
-        const income = Math.round(SA2_MEDIAN_INCOME * (1 - value * 0.85) / 100) * 100;
-        return '≈ $' + income.toLocaleString() + '/yr vs $' + SA2_MEDIAN_INCOME.toLocaleString() + ' SA2 median';
+        // deriveIncomeGapFactor: <$500/wk -> 1.0, <$650/wk -> 0.6, tapers to
+        // a 0.05 floor by $2,500/wk (Wollongong Energy Equity Assessment
+        // brackets).
+        if (value >= 0.999) return "< $500/wk (Council's highest income-poverty bracket)";
+        if (value >= 0.6 - 1e-9 && value <= 0.6 + 1e-9) return "$500–650/wk (Council's second income-poverty bracket)";
+        if (value > 0.05) {
+          const progress = (0.6 - value) / (0.6 - 0.05);
+          const income = Math.round((650 + progress * (2500 - 650)) / 10) * 10;
+          return '≈ $' + income.toLocaleString() + "/wk (between Council's brackets and the taper floor)";
+        }
+        return "≥ $2,500/wk (above Council's published brackets)";
       }
       case 'area_disadvantage': {
+        // Tier 1 (ABS SAL, primary): factor = (10 - decile) / 9.
         const decile = Math.max(1, Math.min(10, Math.round(10 - value * 9)));
-        return 'SEIFA IRSD decile ' + decile + '/10 (1 = most disadvantaged)';
+        return 'ABS SEIFA IRSD 2021 decile ' + decile + '/10 by suburb (1 = most disadvantaged nationally)';
       }
       case 'payment_difficulty': {
-        const missed = Math.round(value * 8);
-        return missed + ' of 12 recent bills paid late/missed';
+        // derivePaymentDifficultyFactor: linear 0 -> $3,500 (top of the
+        // Save4Good pilot's typical arrears range).
+        const arrears = Math.round((value * 3500) / 50) * 50;
+        return '≈ $' + arrears.toLocaleString() + ' in overdue arrears (typical range: $1,800–$3,500)';
       }
       case 'energy_burden': {
-        const pct = (value * 22).toFixed(1);
-        return pct + '% of income on energy (stress benchmark: >6%)';
+        // deriveEnergyBurdenFactor: burdenPct / 0.10 (Council's own 2030
+        // Energy Equity Framework target), clipped at 1.0.
+        const pct = (value * 10).toFixed(1);
+        return '≈ ' + pct + "% of income on energy (Council's own target: 10%)";
       }
       case 'no_solar_access': {
-        return value >= 0.5 ? 'No rooftop solar — full grid dependence' : (Math.round((1 - value) * 100) + '% of demand met by existing solar');
+        // deriveNoSolarAccessFactor: 0 if the household has solar, else a
+        // 0.5 floor plus up to 0.5 more from the suburb's real APVI solar
+        // density gap vs the 35% LGA average.
+        if (value <= 1e-9) return 'Has rooftop solar (real per-household status)';
+        const gap = Math.round(Math.max(0, (value - 0.5) * 2) * 100);
+        return 'No rooftop solar — suburb solar density ' + gap + '% below the 35% LGA average (APVI)';
       }
       default: return '';
     }
