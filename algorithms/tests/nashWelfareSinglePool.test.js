@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { nashWelfareSinglePoolAllocate, allocateWithReserve } from '../src/allocation/nashWelfareSinglePool.js';
-import { checkPoolConservation, checkCapsRespected, checkNoWastedSupplyWhenCapped, checkMonotonicInWeight } from '../src/fairness/checkInvariants.js';
+import { checkPoolConservation, checkCapsRespected, checkMonotonicInWeight } from '../src/fairness/checkInvariants.js';
 
 // Deterministic PRNG (mulberry32) so "random" fuzz trials are reproducible
 // across runs — a real bug found once will fail every run after, not just
@@ -17,52 +17,67 @@ function mulberry32(seed) {
   };
 }
 
-describe('nashWelfareSinglePoolAllocate — exact hand-verifiable cases', () => {
-  test('the documented 3-household example: scores 1.0/0.45/0.12, pool 14, cap 5 -> 5/5/4', () => {
+describe('nashWelfareSinglePoolAllocate — binary all-or-nothing, exact hand-verifiable cases', () => {
+  test('3 households, descending priority, all fit: everyone gets their full cap', () => {
     const households = [
       { id: 'h_high', weight: 1.0, capKwh: 5 },
       { id: 'h_medium', weight: 0.45, capKwh: 5 },
       { id: 'h_low', weight: 0.12, capKwh: 5 },
     ];
+    const result = nashWelfareSinglePoolAllocate(households, 15);
+    assert.equal(result.allocationKwh.h_high, 5);
+    assert.equal(result.allocationKwh.h_medium, 5);
+    assert.equal(result.allocationKwh.h_low, 5);
+    assert.equal(result.leftoverKwh, 0);
+  });
+
+  test('pool only covers the top priority household in full: lower-priority households get zero, not a partial share', () => {
+    const households = [
+      { id: 'h_high', weight: 1.0, capKwh: 10 },
+      { id: 'h_medium', weight: 0.45, capKwh: 10 },
+      { id: 'h_low', weight: 0.12, capKwh: 10 },
+    ];
     const result = nashWelfareSinglePoolAllocate(households, 14);
-    assert.ok(Math.abs(result.allocationKwh.h_high - 5) < 1e-6);
-    assert.ok(Math.abs(result.allocationKwh.h_medium - 5) < 1e-6);
-    assert.ok(Math.abs(result.allocationKwh.h_low - 4) < 1e-6);
-    assert.ok(Math.abs(result.leftoverKwh) < 1e-6);
+    assert.equal(result.allocationKwh.h_high, 10);
+    assert.equal(result.allocationKwh.h_medium, 0);
+    assert.equal(result.allocationKwh.h_low, 0);
+    assert.equal(result.leftoverKwh, 4);
   });
 
-  test('equal weights split a pool with no cap constraint exactly equally', () => {
+  test('skip-and-continue: a higher-priority household that does not fit is skipped, not a queue-stopper', () => {
     const households = [
-      { id: 'a', weight: 1, capKwh: 100 },
-      { id: 'b', weight: 1, capKwh: 100 },
-      { id: 'c', weight: 1, capKwh: 100 },
+      { id: 'h_high', weight: 1.0, capKwh: 8 }, // doesn't fit in 6
+      { id: 'h_low', weight: 0.1, capKwh: 5 }, // fits in what's left
     ];
-    const result = nashWelfareSinglePoolAllocate(households, 30);
-    for (const id of ['a', 'b', 'c']) {
-      assert.ok(Math.abs(result.allocationKwh[id] - 10) < 1e-9);
-    }
+    const result = nashWelfareSinglePoolAllocate(households, 6);
+    assert.equal(result.allocationKwh.h_high, 0);
+    assert.equal(result.allocationKwh.h_low, 5);
+    assert.equal(result.leftoverKwh, 1);
   });
 
-  test('pure proportional split with no cap binding: (score_i / sum(scores)) * pool', () => {
+  test('equal weights: priority order still fully commits households strictly in id order (deterministic tie-break)', () => {
     const households = [
-      { id: 'a', weight: 2, capKwh: 1000 },
-      { id: 'b', weight: 3, capKwh: 1000 },
+      { id: 'a', weight: 1, capKwh: 10 },
+      { id: 'b', weight: 1, capKwh: 10 },
+      { id: 'c', weight: 1, capKwh: 10 },
     ];
-    const result = nashWelfareSinglePoolAllocate(households, 50);
-    assert.ok(Math.abs(result.allocationKwh.a - 20) < 1e-9); // 2/5 * 50
-    assert.ok(Math.abs(result.allocationKwh.b - 30) < 1e-9); // 3/5 * 50
+    const result = nashWelfareSinglePoolAllocate(households, 20);
+    assert.equal(result.allocationKwh.a, 10);
+    assert.equal(result.allocationKwh.b, 10);
+    assert.equal(result.allocationKwh.c, 0);
+    assert.equal(result.leftoverKwh, 0);
   });
 });
 
 describe('nashWelfareSinglePoolAllocate — edge cases', () => {
-  test('a single household simply receives min(pool, cap)', () => {
-    const result = nashWelfareSinglePoolAllocate([{ id: 'solo', weight: 0.7, capKwh: 5 }], 3);
-    assert.ok(Math.abs(result.allocationKwh.solo - 3) < 1e-9);
-    assert.ok(Math.abs(result.leftoverKwh) < 1e-9);
+  test('a single household receives its full cap if it fits, else zero', () => {
+    const fits = nashWelfareSinglePoolAllocate([{ id: 'solo', weight: 0.7, capKwh: 5 }], 10);
+    assert.equal(fits.allocationKwh.solo, 5);
+    assert.equal(fits.leftoverKwh, 5);
 
-    const result2 = nashWelfareSinglePoolAllocate([{ id: 'solo', weight: 0.7, capKwh: 5 }], 20);
-    assert.ok(Math.abs(result2.allocationKwh.solo - 5) < 1e-9);
-    assert.ok(Math.abs(result2.leftoverKwh - 15) < 1e-9);
+    const doesNotFit = nashWelfareSinglePoolAllocate([{ id: 'solo', weight: 0.7, capKwh: 5 }], 3);
+    assert.equal(doesNotFit.allocationKwh.solo, 0);
+    assert.equal(doesNotFit.leftoverKwh, 3);
   });
 
   test('zero pool: everyone gets zero, no error', () => {
@@ -73,11 +88,11 @@ describe('nashWelfareSinglePoolAllocate — edge cases', () => {
     assert.equal(result.leftoverKwh, 0);
   });
 
-  test('zero-cap household receives zero and never blocks the loop', () => {
+  test('zero-cap household is trivially committed (0 <= remaining) and never blocks the queue', () => {
     const households = [{ id: 'zero-cap', weight: 1, capKwh: 0 }, { id: 'normal', weight: 1, capKwh: 10 }];
     const result = nashWelfareSinglePoolAllocate(households, 10);
     assert.equal(result.allocationKwh['zero-cap'], 0);
-    assert.ok(Math.abs(result.allocationKwh.normal - 10) < 1e-6);
+    assert.equal(result.allocationKwh.normal, 10);
   });
 
   test('empty household list returns an empty allocation and the full pool as leftover', () => {
@@ -89,10 +104,10 @@ describe('nashWelfareSinglePoolAllocate — edge cases', () => {
   test('surplus pool: every household hits its cap, leftover is exact', () => {
     const households = [{ id: 'a', weight: 1, capKwh: 3 }, { id: 'b', weight: 1, capKwh: 3 }];
     const result = nashWelfareSinglePoolAllocate(households, 20);
-    assert.ok(Math.abs(result.allocationKwh.a - 3) < 1e-9);
-    assert.ok(Math.abs(result.allocationKwh.b - 3) < 1e-9);
-    assert.ok(Math.abs(result.leftoverKwh - 14) < 1e-9);
-    assert.ok(result.lockOrder.every((e) => e.reason === 'cap'));
+    assert.equal(result.allocationKwh.a, 3);
+    assert.equal(result.allocationKwh.b, 3);
+    assert.equal(result.leftoverKwh, 14);
+    assert.ok(result.lockOrder.every((e) => e.reason === 'committed'));
   });
 
   test('extreme weight skew still conserves the pool exactly', () => {
@@ -123,7 +138,7 @@ describe('nashWelfareSinglePoolAllocate — edge cases', () => {
   });
 });
 
-describe('nashWelfareSinglePoolAllocate — fuzz invariants (2000 trials)', () => {
+describe('nashWelfareSinglePoolAllocate — every allocation is binary (fuzz, 2000 trials)', () => {
   const rand = mulberry32(20260822);
   const N_TRIALS = 2000;
   let violations = [];
@@ -138,16 +153,19 @@ describe('nashWelfareSinglePoolAllocate — fuzz invariants (2000 trials)', () =
     const pool = rand() * 40;
     const result = nashWelfareSinglePoolAllocate(households, pool);
 
-    // Conservation, caps, and no-wasted-supply hold regardless of whether
-    // caps differ across households.
     violations.push(
       ...checkPoolConservation(result, pool).map((v) => `trial ${trial}: ${v}`),
-      ...checkCapsRespected(result.allocationKwh, households).map((v) => `trial ${trial}: ${v}`),
-      ...checkNoWastedSupplyWhenCapped(result, households).map((v) => `trial ${trial}: ${v}`)
+      ...checkCapsRespected(result.allocationKwh, households).map((v) => `trial ${trial}: ${v}`)
     );
+    for (const h of households) {
+      const amount = result.allocationKwh[h.id] ?? 0;
+      if (Math.abs(amount) > 1e-9 && Math.abs(amount - h.capKwh) > 1e-9) {
+        violations.push(`trial ${trial}: ${h.id} received ${amount}, neither 0 nor its full cap ${h.capKwh}`);
+      }
+    }
   }
 
-  test(`0 conservation/cap/no-waste violations across ${N_TRIALS} randomized trials`, () => {
+  test(`0 conservation/cap/binary-only violations across ${N_TRIALS} randomized trials`, () => {
     assert.deepEqual(violations.slice(0, 10), [], `first violations: ${violations.slice(0, 10).join('; ')} (total: ${violations.length})`);
   });
 });
@@ -155,10 +173,9 @@ describe('nashWelfareSinglePoolAllocate — fuzz invariants (2000 trials)', () =
 describe('nashWelfareSinglePoolAllocate — monotonicity fuzz (equal caps, 2000 trials)', () => {
   // Monotonicity ("higher weight never yields a lower allocation") is
   // only a meaningful comparison when every other condition is equal —
-  // in particular the cap. A household with a tiny cap can legitimately
-  // receive less than a lower-weight household with room to use much
-  // more; that's not a fairness violation, so this uses one shared cap
-  // per trial rather than independent random caps.
+  // in particular the cap. With a shared cap, the priority queue tries
+  // higher-weight households first, so a lower-weight household can
+  // never receive its cap while a higher-weight one gets skipped.
   const rand = mulberry32(13571113);
   const N_TRIALS = 2000;
   let violations = [];
@@ -181,90 +198,50 @@ describe('nashWelfareSinglePoolAllocate — monotonicity fuzz (equal caps, 2000 
   });
 });
 
-describe('nashWelfareSinglePoolAllocate — independent optimality cross-check (KKT conditions)', () => {
-  // Rather than re-implement a second optimizer (a hand-rolled projected
-  // gradient ascent turned out to converge to a corner instead of the
-  // true optimum on a first attempt — exactly the kind of bug this test
-  // exists to catch), this verifies the closed-form result directly
-  // against the mathematical definition of optimality for this convex
-  // problem: maximizing sum(w_i * log(x_i)) s.t. sum(x_i) = consumed,
-  // 0 <= x_i <= cap_i has a solution characterized by the KKT
-  // stationarity condition — every household strictly between 0 and its
-  // cap must have the SAME marginal utility w_i / x_i (a shared shadow
-  // price); any household pinned at its cap may have a marginal utility
-  // at or above that shared price (it would take more if it could).
-  // This is independent of the water-filling implementation itself — it
-  // checks the *definition* of the optimum, not the code path that
-  // produced it.
-  function assertSatisfiesKKT(households, result, pool) {
+describe('nashWelfareSinglePoolAllocate — priority order is respected (fuzz, 2000 trials)', () => {
+  // The defining property of "binary, priority-queue" allocation: a
+  // committed household must never sit behind a strictly higher-weight
+  // household that was skipped for lack of room — skip-and-continue only
+  // ever reaches past a higher-priority household, never displaces it.
+  const rand = mulberry32(4242424);
+  const N_TRIALS = 2000;
+  let violations = [];
+
+  for (let trial = 0; trial < N_TRIALS; trial++) {
+    const n = 2 + Math.floor(rand() * 6);
+    const households = Array.from({ length: n }, (_, i) => ({
+      id: `h${i}`,
+      weight: 0.001 + rand() * 2,
+      capKwh: rand() * 15,
+    }));
+    const pool = rand() * 40;
+    const result = nashWelfareSinglePoolAllocate(households, pool);
+
+    // Exact, direct invariant: lockOrder must visit households in
+    // strictly non-increasing weight order — the queue never considers a
+    // lower-priority household before every higher-priority one has
+    // already been decided (committed or skipped).
     const byId = new Map(households.map((h) => [h.id, h]));
-    const interior = households.filter((h) => {
-      const x = result.allocationKwh[h.id];
-      return x > 1e-6 && x < h.capKwh - 1e-6;
-    });
-    if (interior.length > 1) {
-      const shadowPrices = interior.map((h) => h.weight / result.allocationKwh[h.id]);
-      const [first, ...rest] = shadowPrices;
-      for (const price of rest) {
-        assert.ok(
-          Math.abs(price - first) < 1e-4 * Math.max(1, first),
-          `interior households must share one marginal utility (shadow price): got ${shadowPrices.join(', ')}`
-        );
-      }
-      // Anyone pinned at their cap should have wanted at least as much
-      // as the shared shadow price — otherwise they'd have preferred to
-      // stop short, which the algorithm doesn't allow it to do.
-      const sharedPrice = first;
-      for (const h of households) {
-        const x = result.allocationKwh[h.id];
-        if (x >= h.capKwh - 1e-6 && pool > 0) {
-          assert.ok(h.weight / h.capKwh >= sharedPrice - 1e-4, `capped household ${h.id} should value marginal kWh at or above the shared shadow price`);
-        }
+    for (let i = 0; i < result.lockOrder.length - 1; i++) {
+      const wCurrent = byId.get(result.lockOrder[i].id).weight;
+      const wNext = byId.get(result.lockOrder[i + 1].id).weight;
+      if (wNext > wCurrent + 1e-9) {
+        violations.push(`trial ${trial}: lockOrder visited weight ${wCurrent} before higher weight ${wNext}`);
       }
     }
   }
 
-  test('the documented 3-household example satisfies the KKT optimality condition', () => {
-    const households = [
-      { id: 'a', weight: 0.9, capKwh: 6 },
-      { id: 'b', weight: 0.4, capKwh: 6 },
-      { id: 'c', weight: 0.6, capKwh: 6 },
-    ];
-    const result = nashWelfareSinglePoolAllocate(households, 10);
-    assertSatisfiesKKT(households, result, 10);
-  });
-
-  test('the 5-household surplus example satisfies the KKT optimality condition', () => {
-    const households = [
-      { id: 'a', weight: 0.915, capKwh: 5 },
-      { id: 'b', weight: 0.5, capKwh: 5 },
-      { id: 'c', weight: 0.105, capKwh: 5 },
-      { id: 'd', weight: 0.605, capKwh: 5 },
-      { id: 'e', weight: 1.0, capKwh: 5 },
-    ];
-    const result = nashWelfareSinglePoolAllocate(households, 28);
-    assertSatisfiesKKT(households, result, 28);
-  });
-
-  test('500 randomized trials all satisfy the KKT optimality condition', () => {
-    const rand = mulberry32(998877);
-    for (let trial = 0; trial < 500; trial++) {
-      const n = 2 + Math.floor(rand() * 4);
-      const cap = 1 + rand() * 10; // shared cap: KKT check assumes a common ceiling scale, matching the demo's real usage
-      const households = Array.from({ length: n }, (_, i) => ({ id: `h${i}`, weight: 0.01 + rand() * 2, capKwh: cap }));
-      const pool = rand() * n * cap * 1.5;
-      const result = nashWelfareSinglePoolAllocate(households, pool);
-      assertSatisfiesKKT(households, result, pool);
-    }
+  test(`0 priority-order violations across ${N_TRIALS} randomized trials`, () => {
+    assert.deepEqual(violations.slice(0, 10), [], `first violations: ${violations.slice(0, 10).join('; ')} (total: ${violations.length})`);
   });
 });
 
 describe('allocateWithReserve', () => {
   test('reserve is held back and never distributed', () => {
-    const households = [{ id: 'a', weight: 1, capKwh: 100 }, { id: 'b', weight: 1, capKwh: 100 }];
+    const households = [{ id: 'a', weight: 1, capKwh: 10 }, { id: 'b', weight: 1, capKwh: 5 }];
     const result = allocateWithReserve(households, 20, 5);
     const distributed = result.allocationKwh.a + result.allocationKwh.b;
-    assert.ok(Math.abs(distributed - 15) < 1e-9); // 20 - 5 reserve
+    assert.equal(distributed, 15); // 20 - 5 reserve, both fit
     assert.equal(result.reserveKwh, 5);
     assert.equal(result.totalPoolKwh, 20);
   });
@@ -280,7 +257,7 @@ describe('allocateWithReserve', () => {
     assert.throws(() => allocateWithReserve([{ id: 'a', weight: 1, capKwh: 5 }], 10, -1));
   });
 
-  test('with the documented 5 kWh reserve default, a 5-household example fully allocates with correct leftover', () => {
+  test('with the documented 5 kWh reserve, only the top-priority households that fully fit are served', () => {
     const households = [
       { id: 'a', weight: 0.915, capKwh: 5 },
       { id: 'b', weight: 0.5, capKwh: 5 },
@@ -288,25 +265,21 @@ describe('allocateWithReserve', () => {
       { id: 'd', weight: 0.605, capKwh: 5 },
       { id: 'e', weight: 1.0, capKwh: 5 }, // life-support override in the real scoring layer
     ];
-    const result = allocateWithReserve(households, 30, 2);
+    const result = allocateWithReserve(households, 30, 2); // consumable pool: 28 -> 5 households of 5 kWh fit
     for (const h of households) {
-      assert.ok(Math.abs(result.allocationKwh[h.id] - 5) < 1e-6, `${h.id} expected to reach its 5 kWh cap`);
+      assert.equal(result.allocationKwh[h.id], 5, `${h.id} expected to receive its full 5 kWh cap`);
     }
-    assert.ok(Math.abs(result.leftoverKwh - 3) < 1e-6); // 30 - 2 reserve - 25 distributed
+    assert.equal(result.leftoverKwh, 3); // 30 - 2 reserve - 25 distributed
   });
 });
 
 describe('nashWelfareSinglePoolAllocate — scaling regression', () => {
-  // The original implementation rescanned the full active household set
-  // every round it locked someone at their cap, making it O(n^2) in the
-  // worst case: measured directly at ~19ms for 1,000 households, ~3.3s
-  // for 10,000, and it did not finish within 2 minutes for 50,000. The
-  // O(n log n) sort-and-sweep rewrite handles 200,000 households in
-  // ~0.5s. This test is a tripwire against silently regressing back to
-  // the O(n^2) shape — it doesn't assert a tight bound (CI machines
-  // vary), just that a size a real city-scale deployment could plausibly
-  // need stays comfortably fast rather than blowing up.
-  test('20,000 households complete in well under a second, not the tens of seconds an O(n^2) implementation would take', () => {
+  // The proportional predecessor of this algorithm was rewritten once
+  // already to avoid an O(n^2) blowup; the binary priority-queue version
+  // is a single O(n log n) sort plus one O(n) sweep, so this is a
+  // tripwire against a future edit accidentally reintroducing per-item
+  // rescans, not a re-test of a known-fixed bug.
+  test('20,000 households complete in well under a second', () => {
     const rand = mulberry32(271828);
     const n = 20000;
     const households = Array.from({ length: n }, (_, i) => ({
