@@ -72,7 +72,7 @@ for (const [slot, id] of Object.entries(DEMO_HOUSEHOLD_IDS)) {
     no_solar_access: round2(h.no_solar_access),
   };
   REAL_FLAG_DEFAULTS[slot] = { life_support: h.life_support_flag, high_need: h.is_high_need_area };
-  REAL_NAMES[slot] = h.suburb;
+  REAL_NAMES[slot] = 'Household ' + slot;
 }
 
 const STYLE = `
@@ -318,15 +318,19 @@ const STYLE = `
   .score-value-big.pop { transform: scale(1.18); }
 
   .crit-row {
-    display: grid;
-    grid-template-columns: 6.7rem 2.6rem 1fr 2.3rem;
-    align-items: center;
-    gap: 0.55rem;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.7rem;
   }
+  .crit-row-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+  .crit-meta { display: flex; align-items: baseline; gap: 0.5rem; flex-shrink: 0; }
   .crit-label { font-size: 0.74rem; color: var(--ink-2); }
   .crit-weight { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--ink-3); }
-  .crit-value { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .crit-value { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; min-width: 2.3rem; }
   .formula-strip {
     margin-top: 0.75rem; padding-top: 0.7rem; border-top: 1px dashed var(--line);
     font-family: 'JetBrains Mono', monospace; font-size: 0.64rem; color: var(--ink-3);
@@ -464,7 +468,7 @@ const STYLE = `
   .control-label .chip { width: 0.55rem; height: 0.55rem; border-radius: 2px; display: inline-block; margin-right: 0.45rem; vertical-align: middle; }
   .control-label .val { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; color: var(--ink); font-size: 0.8rem; }
 
-  input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 3px; background: var(--track); outline: none; }
+  input[type="range"] { -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--track); outline: none; }
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%;
     background: var(--blue); border: 2px solid var(--bg); cursor: pointer; box-shadow: 0 0 0 1px var(--blue);
@@ -1093,10 +1097,14 @@ const SCRIPT_SOURCE = `
         row.className = 'crit-row';
         const sliderId = 'crit-' + id + '-' + c.key;
         row.innerHTML =
-          '<span class="crit-label">' + c.label + '</span>' +
-          '<span class="crit-weight">&times;' + c.weight.toFixed(2) + '</span>' +
-          '<input type="range" min="0" max="1" step="0.01" value="' + DEFAULTS[id][c.key] + '" id="' + sliderId + '">' +
-          '<span class="crit-value" id="val-' + sliderId + '">' + DEFAULTS[id][c.key].toFixed(2) + '</span>';
+          '<div class="crit-row-top">' +
+            '<span class="crit-label">' + c.label + '</span>' +
+            '<span class="crit-meta">' +
+              '<span class="crit-weight">&times;' + c.weight.toFixed(2) + '</span>' +
+              '<span class="crit-value" id="val-' + sliderId + '">' + DEFAULTS[id][c.key].toFixed(2) + '</span>' +
+            '</span>' +
+          '</div>' +
+          '<input type="range" min="0" max="1" step="0.01" value="' + DEFAULTS[id][c.key] + '" id="' + sliderId + '">';
         card.appendChild(row);
         const input = row.querySelector('input');
         critSliders[id][c.key] = input;
@@ -1194,6 +1202,13 @@ const SCRIPT_SOURCE = `
     return CRITERIA.reduce((sum, c) => sum + c.weight * parseFloat(critSliders[id][c.key].value), 0);
   }
 
+  function updateSliderFill(input) {
+    const min = parseFloat(input.min) || 0;
+    const max = parseFloat(input.max) || 1;
+    const pct = max > min ? ((parseFloat(input.value) - min) / (max - min)) * 100 : 0;
+    input.style.background = 'linear-gradient(to right, var(--blue) ' + pct + '%, var(--track) ' + pct + '%)';
+  }
+
   function readInputs() {
     const pool = parseFloat(sliders.pool.value);
     const reserve = Math.min(parseFloat(sliders.reserve.value), pool);
@@ -1233,6 +1248,7 @@ const SCRIPT_SOURCE = `
         const sliderId = 'crit-' + id + '-' + c.key;
         const val = parseFloat(critSliders[id][c.key].value);
         document.getElementById('val-' + sliderId).textContent = val.toFixed(2);
+        updateSliderFill(critSliders[id][c.key]);
         critSliders[id][c.key].closest('.crit-row').classList.toggle('dimmed', overridden);
         const rawCell = document.getElementById('csv-' + id + '-' + c.key + '-raw');
         if (rawCell) rawCell.innerHTML = rawContext(c.key, val) + '<span class="csv-src">' + SOURCES[c.key] + '</span>';
@@ -1262,6 +1278,9 @@ const SCRIPT_SOURCE = `
       const csvScoreCell = document.getElementById('csv-' + id + '-score');
       if (csvScoreCell) csvScoreCell.textContent = v.scores[id].toFixed(3);
     });
+    updateSliderFill(sliders.pool);
+    updateSliderFill(sliders.reserve);
+    updateSliderFill(sliders.ceiling);
     valOut.pool.textContent = v.pool.toFixed(1);
     valOut.reserve.textContent = v.reserve.toFixed(1);
     valOut.ceiling.textContent = v.ceiling.toFixed(1);
