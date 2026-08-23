@@ -659,3 +659,9 @@ body{background:var(--sarge-bg);color:var(--sarge-text)}
 .landing-hero__content h1,.landing-hero__content p,.landing-hero__actions{width:100%;margin-left:0;margin-right:0;text-align:left}
 .landing-hero__actions{justify-content:flex-start}
 .landing-hero .button--hero{margin-left:0;margin-right:auto}
+
+/* Give the support family artwork a real hero-scale footprint */
+.support-intake__start-card{--family-art-height:clamp(220px,34vh,340px);padding-top:calc(var(--family-art-height) + 34px)}
+.support-intake__start-card:before{top:22px;left:8%;right:8%;height:var(--family-art-height);background-size:contain;background-position:center center}
+@media(max-width:900px){.support-intake__start-card{--family-art-height:clamp(230px,36vh,360px);padding-top:calc(var(--family-art-height) + 30px)}}
+@media(max-width:680px){.support-intake__start-card{--family-art-height:clamp(210px,32vh,320px);padding-top:calc(var(--family-art-height) + 26px)}.support-intake__start-card:before{top:16px;left:5%;right:5%}}
