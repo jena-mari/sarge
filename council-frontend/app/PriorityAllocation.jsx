@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Beaker, BookOpen, Lock, ShieldAlert } from 'lucide-react';
+import { Beaker, BookOpen, Lock, RefreshCw, ShieldAlert } from 'lucide-react';
 
 import { computeHardshipScore, computePriorityWeight, overrideReason } from '../../algorithms/src/scoring/hardshipScore.js';
 import { allocateWithReserve } from '../../algorithms/src/allocation/nashWelfareSinglePool.js';
@@ -17,7 +17,70 @@ const CRITERIA = [
 ];
 
 function cloneFixtures() {
-  return SAMPLE_HOUSEHOLDS_HARDSHIP.map((h) => ({ ...h }));
+  return SAMPLE_HOUSEHOLDS_HARDSHIP.map((h) => ({ ...h, capKwh: SAMPLE_CAP_KWH }));
+}
+
+function readStoredJson(key, fallback) {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    return JSON.parse(window.localStorage.getItem(key)) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function factor(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(0, Math.min(1, number)) : 0;
+}
+
+function requestToHousehold(request) {
+  return {
+    id: request.recipient_id,
+    name: `${request.recipient_id} · ${request.suburb}`,
+    suburb: request.suburb,
+    life_support_flag: request.life_support_flag ? 1 : 0,
+    is_high_need_area: request.is_high_need_area ? 1 : 0,
+    income_gap: factor(request.income_gap),
+    area_disadvantage: factor(request.area_disadvantage),
+    payment_difficulty: factor(request.payment_difficulty),
+    energy_burden: factor(request.energy_burden),
+    no_solar_access: factor(request.no_solar_access),
+    capKwh: Math.max(0, Number(request.demandCapKwh) || 0),
+  };
+}
+
+function readSubmittedFormData() {
+  const contribution = readStoredJson('sargeContribution', null);
+  if (!contribution?.confirmed) {
+    return { ready: false, message: 'No confirmed donation yet. Complete the final confirmation in the donor form.' };
+  }
+
+  const poolKwh = Number(contribution.contributed_kwh);
+  if (!Number.isFinite(poolKwh) || poolKwh <= 0) {
+    return { ready: false, message: 'The confirmed donation does not contain a usable contributed kWh value.' };
+  }
+
+  const storedRequests = readStoredJson('sargeSupportRequests', []);
+  const latestRequest = readStoredJson('sargeSupportRequest', null);
+  const requests = Array.isArray(storedRequests) && storedRequests.length > 0
+    ? storedRequests
+    : latestRequest ? [latestRequest] : [];
+  const eligibleRequests = requests.filter(
+    (request) => request?.consent === true && request.lives_in_wollongong_lga === true
+  );
+
+  if (eligibleRequests.length === 0) {
+    return { ready: false, message: 'Donation found, but no eligible submitted support requests were found.' };
+  }
+
+  return {
+    ready: true,
+    households: eligibleRequests.map(requestToHousehold),
+    poolKwh,
+    donorId: contribution.donor_id,
+    message: `${poolKwh.toFixed(1)} kWh confirmed by ${contribution.donor_id} · ${eligibleRequests.length} support request${eligibleRequests.length === 1 ? '' : 's'} loaded`,
+  };
 }
 
 function Slider({ label, value, onChange, min = 0, max = 1, step = 0.01, suffix = '' }) {
@@ -57,16 +120,21 @@ function HouseholdCard({ household, onChange }) {
           <Slider key={key} label={`${label} (×${weight.toFixed(2)})`} value={household[key]} onChange={(v) => onChange({ ...household, [key]: v })} />
         ))}
       </div>
+      <div className="pa-demand-cap">
+        <Slider label="Support allocation cap" value={household.capKwh} onChange={(v) => onChange({ ...household, capKwh: v })} min={0} max={20} step={0.5} suffix=" kWh-eq" />
+      </div>
     </article>
   );
 }
 
 export default function PriorityAllocation() {
+  const [initialFormData] = useState(readSubmittedFormData);
   const [tab, setTab] = useState('demo');
-  const [households, setHouseholds] = useState(cloneFixtures);
-  const [pool, setPool] = useState(SAMPLE_POOL_KWH);
-  const [reserve, setReserve] = useState(SAMPLE_RESERVE_KWH);
-  const [cap, setCap] = useState(SAMPLE_CAP_KWH);
+  const [households, setHouseholds] = useState(() => initialFormData.ready ? initialFormData.households : cloneFixtures());
+  const [pool, setPool] = useState(() => initialFormData.ready ? initialFormData.poolKwh : SAMPLE_POOL_KWH);
+  const [reserve, setReserve] = useState(() => initialFormData.ready ? 0 : SAMPLE_RESERVE_KWH);
+  const [sourceMode, setSourceMode] = useState(() => initialFormData.ready ? 'forms' : 'sample');
+  const [integrationMessage, setIntegrationMessage] = useState(initialFormData.message);
   const [result, setResult] = useState(null);
 
   const scored = useMemo(
@@ -80,8 +148,22 @@ export default function PriorityAllocation() {
   }
 
   function runAllocation() {
-    const poolHouseholds = scored.map((h) => ({ id: h.id, weight: h.weight, capKwh: cap }));
+    const poolHouseholds = scored.map((h) => {
+      const household = households.find((candidate) => candidate.id === h.id);
+      return { id: h.id, weight: h.weight, capKwh: household?.capKwh ?? 0 };
+    });
     setResult(allocateWithReserve(poolHouseholds, pool, reserve));
+  }
+
+  function loadSubmittedForms() {
+    const formData = readSubmittedFormData();
+    setIntegrationMessage(formData.message);
+    if (!formData.ready) return;
+    setHouseholds(formData.households);
+    setPool(formData.poolKwh);
+    setReserve(0);
+    setSourceMode('forms');
+    setResult(null);
   }
 
   return (
@@ -90,7 +172,7 @@ export default function PriorityAllocation() {
         <div>
           <p className="cd-kicker">Recipient allocation</p>
           <h2>Priority allocation</h2>
-          <p>How the community pool is scored and split across registered hardship households.</p>
+          <p>How verified contribution units are scored and allocated across eligible support requests.</p>
         </div>
         <div className="pa-tabs">
           <button className={tab === 'demo' ? 'active' : ''} onClick={() => setTab('demo')}><Beaker size={14} /> Live simulation</button>
@@ -104,8 +186,19 @@ export default function PriorityAllocation() {
             This runs the real allocation module (<code>algorithms/src/scoring/hardshipScore.js</code> and{' '}
             <code>algorithms/src/allocation/nashWelfareSinglePool.js</code>) directly in the browser for demonstration —
             per <code>council-frontend/README.md</code>, a production build must move this calculation server-side and
-            treat this panel as presentational only.
+            treat this panel as presentational only. Allocation amounts are kWh-equivalent accounting units; they do not
+            represent physical electricity delivery or retailer settlement.
           </p>
+
+          <div className={`pa-form-bridge ${sourceMode === 'forms' ? 'ready' : ''}`}>
+            <div>
+              <strong>{sourceMode === 'forms' ? 'Using submitted form data' : 'Using sample households'}</strong>
+              <span>{integrationMessage}</span>
+            </div>
+            <button className="cd-secondary" type="button" onClick={loadSubmittedForms}>
+              <RefreshCw size={15} /> Load submitted form data
+            </button>
+          </div>
 
           <div className="pa-cards">
             {households.map((h) => (
@@ -114,17 +207,16 @@ export default function PriorityAllocation() {
           </div>
 
           <div className="pa-pool-controls">
-            <Slider label="Total pool" value={pool} onChange={setPool} min={2} max={40} step={0.5} suffix=" kWh" />
-            <Slider label="Emergency reserve" value={reserve} onChange={setReserve} min={0} max={15} step={0.5} suffix=" kWh" />
-            <Slider label="Ceiling per household" value={cap} onChange={setCap} min={1} max={12} step={0.5} suffix=" kWh" />
-            <button className="cd-primary" onClick={runAllocation}>Run allocation</button>
+            <Slider label="Contribution pool" value={pool} onChange={setPool} min={0} max={40} step={0.5} suffix=" kWh-eq" />
+            <Slider label="Protected reserve" value={reserve} onChange={setReserve} min={0} max={Math.max(15, pool)} step={0.5} suffix=" kWh-eq" />
+            <button className="cd-primary" disabled={households.length === 0 || pool <= 0} onClick={runAllocation}>Run allocation</button>
           </div>
 
           {result && (
             <div className="pa-results">
               <div className="cd-table-scroll">
                 <table>
-                  <thead><tr><th>Household</th><th>Score</th><th>Allocated</th><th>Status</th></tr></thead>
+                  <thead><tr><th>Household</th><th>Score</th><th>Support cap</th><th>Allocated equivalent</th><th>Status</th></tr></thead>
                   <tbody>
                     {scored.map((h) => {
                       const amount = result.allocationKwh[h.id] ?? 0;
@@ -133,7 +225,8 @@ export default function PriorityAllocation() {
                         <tr key={h.id}>
                           <td><strong>{h.name}</strong></td>
                           <td>{h.weight.toFixed(3)}</td>
-                          <td>{amount.toFixed(2)} kWh</td>
+                          <td>{(households.find((candidate) => candidate.id === h.id)?.capKwh ?? 0).toFixed(1)} kWh-eq</td>
+                          <td>{amount.toFixed(2)} kWh-eq</td>
                           <td>
                             <span className={`cd-status ${lock?.reason === 'cap' ? 'cd-status--online' : 'cd-status--monitor'}`}>
                               <i />
@@ -147,9 +240,9 @@ export default function PriorityAllocation() {
                 </table>
               </div>
               <div className="pa-summary">
-                <span><Lock size={14} /> Reserve held back: <strong>{result.reserveKwh.toFixed(2)} kWh</strong></span>
-                <span>Distributed: <strong>{result.consumedTotalKwh.toFixed(2)} kWh</strong></span>
-                <span>Leftover: <strong>{result.leftoverKwh.toFixed(2)} kWh</strong></span>
+                <span><Lock size={14} /> Reserve held back: <strong>{result.reserveKwh.toFixed(2)} kWh-eq</strong></span>
+                <span>Allocated: <strong>{result.consumedTotalKwh.toFixed(2)} kWh-eq</strong></span>
+                <span>Unallocated: <strong>{result.leftoverKwh.toFixed(2)} kWh-eq</strong></span>
               </div>
             </div>
           )}

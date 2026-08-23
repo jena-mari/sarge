@@ -18,11 +18,11 @@ export const incomingSources = [
 ];
 
 export const outgoingAllocations = [
-  { id:'R-2041', household:'H0812', suburb:'Warrawong', current:2.4, today:11.8, allocation:'Priority support', source:'Community pool', status:'Delivering' },
-  { id:'R-2038', household:'H0441', suburb:'Cringila', current:1.8, today:8.6, allocation:'Standard support', source:'Community pool', status:'Delivering' },
-  { id:'R-2035', household:'H0674', suburb:'Bellambi', current:2.1, today:10.2, allocation:'Priority support', source:'Community pool', status:'Delivering' },
+  { id:'R-2041', household:'H0812', suburb:'Warrawong', current:2.4, today:11.8, allocation:'Priority support', source:'Contribution pool', status:'Allocated' },
+  { id:'R-2038', household:'H0441', suburb:'Cringila', current:1.8, today:8.6, allocation:'Standard support', source:'Contribution pool', status:'Allocated' },
+  { id:'R-2035', household:'H0674', suburb:'Bellambi', current:2.1, today:10.2, allocation:'Priority support', source:'Contribution pool', status:'Allocated' },
   { id:'R-2029', household:'H0198', suburb:'Berkeley', current:0.9, today:6.4, allocation:'Standard support', source:'Reserve', status:'Scheduled' },
-  { id:'R-2024', household:'H0733', suburb:'Port Kembla', current:1.5, today:7.9, allocation:'Priority support', source:'Community pool', status:'Delivering' },
+  { id:'R-2024', household:'H0733', suburb:'Port Kembla', current:1.5, today:7.9, allocation:'Priority support', source:'Contribution pool', status:'Allocated' },
 ];
 
 export const energyRequests = [
