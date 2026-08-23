@@ -54,3 +54,6 @@
 .pa-refs a{color:var(--text)}
 .pa-refs a:hover{color:var(--blue)}
 @media(max-width:820px){.cd-panel-head:has(.pa-tabs){flex-direction:column;align-items:flex-start}.pa-tabs{align-self:stretch}.pa-tabs button{flex:1;justify-content:center}}
+/* Match the compact Figma typography used across Sarge */
+.council-app{font-family:'Sarge Outfit',-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;letter-spacing:.012em;font-size:14px}.cd-main>header h1,.cd-panel-head h2,.cd-metric strong{letter-spacing:.01em}.cd-content{max-width:1480px;padding:22px 24px 54px}.council-app aside{width:232px}.cd-main{margin-left:232px;width:calc(100% - 232px)}.cd-metric{padding:17px}.cd-panel{padding:19px}.council-app th{letter-spacing:.075em}.council-app td{letter-spacing:.018em}
+@media(max-width:820px){.cd-main{margin-left:0;width:100%}}
