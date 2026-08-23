@@ -538,3 +538,95 @@ body{background:#f2f2f3;font-weight:400}.landing-hero{width:calc(100% - 64px);he
 .landing-hero__background{display:block!important;visibility:visible;opacity:1;animation:none;will-change:auto}
 @media(prefers-reduced-motion:reduce){.landing-hero__background{display:block!important}.landing-hero__illustration{animation:none!important}}
 @media(max-width:680px){.support-intake__brand{grid-template-columns:25px auto 1px auto;gap:7px}.support-intake__brand img{width:25px;height:25px}.support-intake__brand span:after{font-size:1.08rem}.support-intake__brand:before{height:28px}.support-intake__brand:after{font-size:.54rem}}
+
+/* Full-viewport welcome and mathematically centred onboarding layout */
+.landing-hero{width:100%;height:100svh;min-height:620px;margin:0;border-radius:0;box-shadow:none}
+.landing-hero__nav{left:50%;right:auto;top:clamp(24px,4.5vh,48px);width:min(1440px,calc(100% - 64px));transform:translateX(-50%);align-items:center}
+.landing-hero__content{left:max(32px,calc((100% - 1440px)/2 + 32px));top:50%;width:min(49%,680px);transform:translateY(-50%)}
+.landing-hero__illustration{top:50%;bottom:auto;transform:translateY(-50%);object-position:left center}
+.property-step{padding:clamp(12px,2vh,20px) clamp(16px,2.5vw,40px) clamp(16px,2.5vh,24px)}
+.property-step__nav,.step-dots,.property-step__card{width:min(1440px,100%)}
+.property-step__nav{margin-left:auto;margin-right:auto}
+.property-step__card{position:relative;justify-content:center;align-items:stretch;padding:clamp(70px,9vh,92px) clamp(28px,4.5vw,72px) clamp(26px,4vh,48px);overflow:auto}
+.property-step__top{position:absolute;z-index:2;left:clamp(22px,3vw,42px);right:clamp(22px,3vw,42px);top:clamp(18px,2.5vh,28px);margin:0}
+.property-step h1,.property-step .data-source-step__title,.property-step .eligibility-step__title{width:100%;margin-left:auto!important;margin-right:auto!important;text-align:center}
+.property-step__types,.property-step__form,.eligibility-step__summary,.eligibility-step__checks,.data-source-step__methods,.data-source-step__details,.pledge-step__layout,.confirm-donation-grid,.confirm-donation-info,.confirm-donation-reassurance{margin-left:auto;margin-right:auto}
+.property-step__types,.property-step__form{width:min(1100px,100%)}
+.eligibility-step__summary,.eligibility-step__checks{width:min(900px,100%)}
+.data-source-step__methods{width:min(1100px,100%)}
+.pledge-step__layout{width:min(1040px,100%)}
+@media(max-width:900px){.landing-hero__content{left:32px;width:58%}.landing-hero__illustration{transform:translateY(-50%)}.property-step__card{justify-content:flex-start}}
+@media(max-width:760px){.landing-hero{width:100%;height:100svh;margin:0;border-radius:0}.landing-hero__nav{top:18px;width:calc(100% - 32px)}.landing-hero__content{left:20px;right:20px;top:46%;width:auto;transform:translateY(-50%)}.landing-hero__illustration{top:auto;bottom:-28px;transform:none}.property-step{padding:8px}.property-step__card{padding:70px 14px 20px}.property-step__top{left:14px;right:14px;top:16px}}
+
+/* Reports: professional civic-energy data palette */
+.chart .recharts-rectangle[name="Generated"]{fill:#27445d!important;stroke:none!important}
+.chart .recharts-rectangle[name="Used"]{fill:#4f8fc9!important;stroke:none!important}
+.chart .recharts-rectangle[name="Contributed"]{fill:#2f9b88!important;stroke:none!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(1) svg path{fill:#27445d!important;stroke:#27445d!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(2) svg path{fill:#4f8fc9!important;stroke:#4f8fc9!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(3) svg path{fill:#2f9b88!important;stroke:#2f9b88!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(1) .recharts-legend-item-text{color:#27445d!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(2) .recharts-legend-item-text{color:#4f8fc9!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(3) .recharts-legend-item-text{color:#2f9b88!important}
+
+/* Keep the support brand lockup in one ordered row at every width */
+.support-intake__brand{grid-template-columns:30px max-content 1px max-content;grid-template-rows:34px;grid-auto-flow:column;align-items:center;flex:0 0 auto;white-space:nowrap}
+.support-intake__brand img{grid-column:1;grid-row:1}
+.support-intake__brand span{grid-column:2;grid-row:1}
+.support-intake__brand:before{grid-column:3;grid-row:1}
+.support-intake__brand:after{grid-column:4;grid-row:1}
+@media(max-width:680px){.support-intake__brand{grid-template-columns:25px max-content 1px max-content;grid-template-rows:28px}.support-intake__header{align-items:center}.support-intake__pill{display:none}}
+@media(max-width:380px){.support-intake__brand{gap:6px}.support-intake__brand span:after{font-size:1rem}.support-intake__brand:after{font-size:.49rem}}
+
+/* Council dashboard is the shared visual source of truth */
+:root{--sarge-navy:#142536;--sarge-blue:#1672e8;--sarge-green:#139665;--sarge-text:#17212b;--sarge-muted:#677583;--sarge-line:#dfe5ea;--sarge-bg:#f4f6f8;--sarge-panel:rgba(255,255,255,.76);--sarge-shadow:0 18px 55px rgba(30,36,50,.075)}
+body{background:var(--sarge-bg);color:var(--sarge-text)}
+.nav-wrap{padding:0 22px;background:rgba(255,255,255,.72);border-bottom:1px solid rgba(223,229,234,.8);box-shadow:0 8px 32px rgba(28,36,50,.04)}
+.navbar{height:72px;max-width:1380px}
+.logo strong{color:var(--sarge-navy)}
+.logo:after,.nav-links a,.page-title h1{color:var(--sarge-muted)}
+.nav-links a.active,.nav-links a:hover{color:var(--sarge-text)}
+.nav-links a.active:after{background:var(--sarge-blue)}
+.contact,.button{background:var(--sarge-blue);box-shadow:0 8px 22px rgba(22,114,232,.16)}
+.contact:hover,.button:hover{background:#0f66d4;box-shadow:0 10px 26px rgba(22,114,232,.22)}
+.button--light,.button--outline{background:#e9f2ff;color:#155da9;box-shadow:none}
+.page{width:min(1340px,92vw);padding-top:38px}
+.page-title{margin-bottom:24px}
+.page-title .eyebrow{color:var(--sarge-text);font-size:2rem;font-weight:650}
+.credit-card,.report-card,.energy-panel,.pledge-card,.success-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div,.rewards-head>div,.today-flow,.availability{border:1px solid rgba(255,255,255,.78);border-radius:14px;background:var(--sarge-panel);box-shadow:var(--sarge-shadow);backdrop-filter:saturate(170%) blur(22px);-webkit-backdrop-filter:saturate(170%) blur(22px)}
+.credit-card,.report-card,.energy-panel,.pledge-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div,.rewards-head>div,.today-flow{background:rgba(255,255,255,.72)}
+.credit-card>strong,.energy-step strong,.impact-grid strong,.rewards-head strong{color:var(--sarge-navy)}
+.credit-card h3,.report-card h2,.chart-card h2,.reports-toolbar h2,.reward-card h2,.recognition h2{color:var(--sarge-text)}
+.credit-card p,.report-card>p:not(.eyebrow),.chart-summary,.reward-card p,.rewards-section-head p,.recognition p{color:var(--sarge-muted)}
+.credit-card__added{background:#e5f5ee;color:#0b7049;font-weight:600}
+.credit-card .button{background:var(--sarge-navy)}
+.report-icon,.step-index{background:#e9f2ff;color:var(--sarge-blue);box-shadow:none}
+.segmented{background:#e8edf2;border-radius:9px}
+.segmented button{border-radius:7px;color:var(--sarge-muted);font-weight:500}
+.segmented button.active{color:var(--sarge-text);box-shadow:0 2px 8px rgba(20,37,54,.08)}
+.report-placeholder,.report-preview div,.today-flow .pink,.slider-wrap{background:#f7f9fb;border:1px solid var(--sarge-line);box-shadow:none}
+.report-preview .benefit,.reward-card.featured{background:#e9f2ff;border-color:#cfe1f5}
+.energy-step{border-color:var(--sarge-line)}
+.energy-step.contributed{background:#eef8f4;border:1px solid #cee9dd;border-left:4px solid var(--sarge-green);box-shadow:none}
+.energy-step.contributed:after{display:none}
+.availability,.connected{background:#eef8f4;border:1px solid #cee9dd;border-left:4px solid var(--sarge-green);border-radius:10px}
+.availability svg,.connected>svg{background:var(--sarge-green)}
+.choice,.level-track span{border:1px solid var(--sarge-line);border-radius:9px;background:#fff}
+.choice.selected,.level-track .active{border:1px solid #9ec8f3;background:#e9f2ff;color:#155da9}
+.choice svg{background:var(--sarge-blue)}
+.success-mark{background:#e5f5ee;color:var(--sarge-green)}
+.rewards-section,.recognition{border-color:var(--sarge-line)}
+.civic-reward-card,.credit-balance-section>div,.credit-balance-section dl,.badge-levels span{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.78);border-radius:12px;box-shadow:0 10px 32px rgba(30,36,50,.055)}
+.civic-reward-card.available{outline:0;border-color:#9ec8f3;background:#f7fbff}
+.badge-levels span.active{background:var(--sarge-blue);color:#fff}
+.badge-progress i{background:var(--sarge-blue)}
+.impact-grid div{border-top:3px solid var(--sarge-blue)}
+.support-intake,.property-step{background:radial-gradient(circle at 7% 0,rgba(207,225,244,.58),transparent 27rem),var(--sarge-bg)}
+.support-intake__hero-copy,.support-intake__start-card,.support-intake__progress,.support-intake__panel,.property-step__card{border-radius:14px;border-color:rgba(255,255,255,.78);box-shadow:var(--sarge-shadow)}
+.support-intake__field,.support-intake__check-grid label,.support-intake__toggle,.eligibility-step__summary,.eligibility-step__checks label,.data-source-step__details,.pledge-step__metrics article,.pledge-step__control{border-radius:10px;background:#f7f9fb;border-color:var(--sarge-line)}
+.support-intake__primary,.property-step__top-continue,.property-step__check{background:var(--sarge-blue)}
+.support-intake__success-mark,.support-intake__notice{background:#e5f5ee;color:#0b7049;border-color:#cee9dd}
+.property-step__types button,.data-source-card,.verify-step__methods button,.reward-confirm-step__grid button{border-radius:11px;background:#f7f9fb;border-color:var(--sarge-line)}
+.property-step__types button.selected,.data-source-card.selected,.verify-step__methods button.selected,.reward-confirm-step__grid button.selected{border-color:#8dbdee;background:#fff;box-shadow:0 0 0 3px rgba(22,114,232,.09)}
+.property-step__form input,.property-step__form select,.property-step__number,.data-source-step__details input,.data-source-step__details select,.support-intake__field input,.support-intake__field select{border-color:var(--sarge-line);background:#fff}
+@media(max-width:760px){.nav-wrap{padding:0 12px}.navbar{height:62px}.credit-card,.report-card,.energy-panel,.pledge-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div{border-radius:12px}.support-intake__hero-copy,.support-intake__start-card,.support-intake__progress,.support-intake__panel,.property-step__card{border-radius:12px}}
