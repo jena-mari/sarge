@@ -603,9 +603,10 @@ const STYLE = `
 `;
 
 const BODY_HTML = `<div class="pf-page">
-  <a href="/overview" style="display:inline-flex;align-items:center;gap:4px;font-size:0.85rem;font-weight:700;text-decoration:none;color:inherit;margin-bottom:1rem">&larr; Back to Sarge</a>
-
-  
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <a href="/overview" style="display:inline-flex;align-items:center;gap:4px;font-size:0.85rem;font-weight:700;text-decoration:none;color:inherit;">&larr; Back to Sarge</a>
+    <a href="/algorithm/docs" style="display:inline-flex;align-items:center;gap:4px;font-size:0.85rem;font-weight:700;text-decoration:none;color:var(--blue);">Methodology &amp; Data Provenance Docs &rarr;</a>
+  </div>
 
   <header>
     <div class="pf-eyebrow">Power Commons Exchange · Live Demo</div>
