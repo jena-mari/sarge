@@ -607,6 +607,14 @@ const BODY_HTML = `<div class="pf-page">
       <strong>allocate</strong> the shared pool proportionally until each tank hits its ceiling. Walk
       through it stage by stage below.
     </p>
+    <p class="lede" style="margin-top:0.4rem;font-size:0.86rem;">
+      The five households below are real Wollongong suburbs (Coniston, Bellambi, Cordeaux Heights,
+      Warrawong, Figtree), and every factor is derived from real, cited data — ABS SEIFA suburb data,
+      Council's own Energy Equity Assessment and Framework, Endeavour Energy's postcode consumption
+      data, and Australian PV Institute solar data. See the
+      <a href="/algorithm/docs" style="color:inherit;text-decoration:underline">Data Provenance Dossier</a>
+      for exactly where every number comes from, field by field.
+    </p>
   </header>
 
   <div class="wizard-nav">
@@ -636,7 +644,7 @@ const BODY_HTML = `<div class="pf-page">
         <summary>Full calculation, per household <span class="chev">▾</span></summary>
         <div class="hh-tabs" id="hh-tabs"></div>
         <div id="hh-panels"></div>
-        <div class="raw-note" style="padding:0 1.1rem 1rem;">Raw values are illustrative reconstructions for demo readability, not measured data. "Source" names the type of real-world data a production system would draw from — scoring_and_tiered_allocation.py takes all five factors pre-normalized as upstream input and does not define this raw-to-normalized mapping itself.</div>
+        <div class="raw-note" style="padding:0 1.1rem 1rem;">Each household's five factors are the real output of <code>deriveHardshipFactors.js</code> for that real suburb's actual income, energy cost, arrears and solar status. Dragging a slider recomputes the "raw value" shown using that same real formula in reverse, so it always reflects what real-world figure produces that exact score — not an invented placeholder. "Source" names the specific real dataset each formula is calibrated against. Full citations, real ABS/Council/APVI sources, and every field's derivation: <a href="/algorithm/docs" style="color:inherit">Data Provenance Dossier</a>.</div>
       </details>
 
       <div class="panel-actions">
@@ -803,9 +811,11 @@ const BODY_HTML = `<div class="pf-page">
     weighted sum of five factors (fixed weights summing to 1.00). The fountain is
     <code>simple_nash_allocation.py</code>'s water-filling loop, played out continuously: every uncapped
     household draws at once, proportional to score, until it hits the ceiling and seals off — the
-    remaining pool re-splits automatically among whoever's left. Raw figures in the per-household
-    calculation tables are illustrative reconstructions for demo readability, not measured data — the
-    real system takes these five factors pre-normalized as upstream input.
+    remaining pool re-splits automatically among whoever's left. The five households and their raw
+    figures are real Wollongong data, sourced from ABS SEIFA, Council's Energy Equity Assessment and
+    Framework, Endeavour Energy's postcode consumption data, and the Australian PV Institute — see the
+    <a href="/algorithm/docs" style="color:inherit">Data Provenance Dossier</a> for every field's full
+    derivation and citation.
   </footer>
 
 </div>`;
