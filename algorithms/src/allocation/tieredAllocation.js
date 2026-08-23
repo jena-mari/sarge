@@ -22,8 +22,9 @@
  *            (its own internal Nash-welfare pass — so if there's more
  *            than one Tier-0 household, they still split fairly by
  *            their own hardship weight rather than by arrival order).
- *   Tier 1 — everyone else. Solved via composite-weighted Nash welfare
- *            over whatever pool capacity Tier 0 didn't use.
+ *   Tier 1 — everyone else. Solved via binary, priority-queue
+ *            allocation (full cap or nothing, highest composite weight
+ *            first) over whatever pool capacity Tier 0 didn't use.
  *
  * The defining, tested property (see tieredAllocation.test.js's "bypass
  * invariant") is: Tier 1 never receives anything until every Tier 0
@@ -66,7 +67,7 @@
  */
 
 import { computePriorityWeight } from '../scoring/hardshipScore.js';
-import { nashWelfareSinglePoolAllocate } from './nashWelfareSinglePool.js';
+import { nashWelfareSinglePoolAllocate, proportionalNashWelfareAllocate } from './nashWelfareSinglePool.js';
 
 export const HIGH_NEED_AREA_IS_HARD_OVERRIDE = false;
 
@@ -129,15 +130,19 @@ export function allocateTiered(households, poolKwh, policy, extraShares = {}) {
   });
 
   // --- Tier 0: hard override, solved first against the FULL pool ---
+  // Deliberately still the proportional allocator, not the binary one:
+  // a life-support/hospital household must never drop to exactly zero
+  // just because its full demand doesn't fit the pool — see
+  // proportionalNashWelfareAllocate's docstring.
   let tier0Result = null;
   let leftoverForTier1 = poolKwh;
   if (tier0.length > 0) {
-    tier0Result = nashWelfareSinglePoolAllocate(tier0.map(toPoolInput), poolKwh);
+    tier0Result = proportionalNashWelfareAllocate(tier0.map(toPoolInput), poolKwh);
     const tier0Used = Object.values(tier0Result.allocationKwh).reduce((a, b) => a + b, 0);
     leftoverForTier1 = Math.max(0, poolKwh - tier0Used);
   }
 
-  // --- Tier 1: composite-weighted Nash welfare over whatever Tier 0 left ---
+  // --- Tier 1: binary, priority-queue allocation over whatever Tier 0 left ---
   let tier1Result = null;
   if (tier1.length > 0 && leftoverForTier1 > 1e-9) {
     tier1Result = nashWelfareSinglePoolAllocate(tier1.map(toPoolInput), leftoverForTier1);
