@@ -685,7 +685,7 @@ body{background:var(--sarge-bg);color:var(--sarge-text)}
 @media(min-width:761px){
   .landing-hero__content{top:16%;bottom:16%;height:auto;transform:none;justify-content:center}
   .landing-hero__content:before{margin-bottom:clamp(9px,1.3vh,16px);font-size:.72rem}
-  .landing-hero__content h1{font-size:clamp(3.5rem,min(5.55vw,7.5vh),5.9rem)}
+  .landing-hero__content h1{font-size:clamp(3.85rem,min(6.3vw,8.2vh),7.2rem);line-height:.91}
   .landing-hero__content p{margin-top:clamp(11px,1.8vh,20px);font-size:clamp(1.05rem,min(1.35vw,2.25vh),1.32rem);line-height:1.42}
   .landing-hero__actions{margin-top:clamp(14px,2.4vh,24px)}
   .landing-hero .button--hero{font-size:1rem}
