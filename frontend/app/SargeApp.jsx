@@ -363,6 +363,28 @@ function Onboarding() {
  const [retailer,setRetailer]=useState('');
  const [inverterOrVppProvider,setInverterOrVppProvider]=useState('');
  const [weeklyCap,setWeeklyCap]=useState(defaultWeeklyDonationCap);
+ useEffect(()=>{
+  if(screen!=='hero')return undefined;
+  const hero=document.querySelector('.landing-hero');
+  if(!hero)return undefined;
+  let frame;
+  const position=(event)=>{
+   cancelAnimationFrame(frame);
+   frame=requestAnimationFrame(()=>{
+    const bounds=hero.getBoundingClientRect();
+    const x=Math.max(0,Math.min(1,(event.clientX-bounds.left)/bounds.width));
+    const y=Math.max(0,Math.min(1,(event.clientY-bounds.top)/bounds.height));
+    hero.style.setProperty('--glow-x',`${(x*100).toFixed(2)}%`);
+    hero.style.setProperty('--glow-y',`${(y*100).toFixed(2)}%`);
+    hero.style.setProperty('--panel-x',`${((x-.5)*8).toFixed(2)}px`);
+    hero.style.setProperty('--panel-y',`${((y-.5)*6).toFixed(2)}px`);
+   });
+  };
+  const reset=()=>{hero.style.setProperty('--glow-x','32%');hero.style.setProperty('--glow-y','58%');hero.style.setProperty('--panel-x','0px');hero.style.setProperty('--panel-y','0px')};
+  hero.addEventListener('pointermove',position,{passive:true});
+  hero.addEventListener('pointerleave',reset);
+  return()=>{cancelAnimationFrame(frame);hero.removeEventListener('pointermove',position);hero.removeEventListener('pointerleave',reset)};
+ },[screen]);
  const allConsent=consentItems.every(([key])=>eligibilityConsent[key]);
  const verifiedExportToday=demoDataSourcePayload.verified_export_today;
  const estimatedWeeklyExport=demoDataSourcePayload.estimated_weekly_export;
