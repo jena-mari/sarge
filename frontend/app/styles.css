@@ -653,3 +653,9 @@ body{background:var(--sarge-bg);color:var(--sarge-text)}
 .support-intake__start-card>*{position:relative;z-index:1}
 @media(max-width:900px){.support-intake__start-card{padding-top:150px}.support-intake__start-card:before{height:126px}}
 @media(max-width:680px){.support-intake__start-card{padding-top:132px}.support-intake__start-card:before{top:14px;height:110px}}
+
+/* Share one alignment edge across welcome copy and action */
+.landing-hero__content{display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.landing-hero__content h1,.landing-hero__content p,.landing-hero__actions{width:100%;margin-left:0;margin-right:0;text-align:left}
+.landing-hero__actions{justify-content:flex-start}
+.landing-hero .button--hero{margin-left:0;margin-right:auto}
