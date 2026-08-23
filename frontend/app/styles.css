@@ -568,3 +568,12 @@ body{background:#f2f2f3;font-weight:400}.landing-hero{width:calc(100% - 64px);he
 .chart .recharts-default-legend .recharts-legend-item:nth-child(1) .recharts-legend-item-text{color:#27445d!important}
 .chart .recharts-default-legend .recharts-legend-item:nth-child(2) .recharts-legend-item-text{color:#4f8fc9!important}
 .chart .recharts-default-legend .recharts-legend-item:nth-child(3) .recharts-legend-item-text{color:#2f9b88!important}
+
+/* Keep the support brand lockup in one ordered row at every width */
+.support-intake__brand{grid-template-columns:30px max-content 1px max-content;grid-template-rows:34px;grid-auto-flow:column;align-items:center;flex:0 0 auto;white-space:nowrap}
+.support-intake__brand img{grid-column:1;grid-row:1}
+.support-intake__brand span{grid-column:2;grid-row:1}
+.support-intake__brand:before{grid-column:3;grid-row:1}
+.support-intake__brand:after{grid-column:4;grid-row:1}
+@media(max-width:680px){.support-intake__brand{grid-template-columns:25px max-content 1px max-content;grid-template-rows:28px}.support-intake__header{align-items:center}.support-intake__pill{display:none}}
+@media(max-width:380px){.support-intake__brand{gap:6px}.support-intake__brand span:after{font-size:1rem}.support-intake__brand:after{font-size:.49rem}}
