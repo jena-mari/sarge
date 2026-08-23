@@ -577,3 +577,56 @@ body{background:#f2f2f3;font-weight:400}.landing-hero{width:calc(100% - 64px);he
 .support-intake__brand:after{grid-column:4;grid-row:1}
 @media(max-width:680px){.support-intake__brand{grid-template-columns:25px max-content 1px max-content;grid-template-rows:28px}.support-intake__header{align-items:center}.support-intake__pill{display:none}}
 @media(max-width:380px){.support-intake__brand{gap:6px}.support-intake__brand span:after{font-size:1rem}.support-intake__brand:after{font-size:.49rem}}
+
+/* Council dashboard is the shared visual source of truth */
+:root{--sarge-navy:#142536;--sarge-blue:#1672e8;--sarge-green:#139665;--sarge-text:#17212b;--sarge-muted:#677583;--sarge-line:#dfe5ea;--sarge-bg:#f4f6f8;--sarge-panel:rgba(255,255,255,.76);--sarge-shadow:0 18px 55px rgba(30,36,50,.075)}
+body{background:var(--sarge-bg);color:var(--sarge-text)}
+.nav-wrap{padding:0 22px;background:rgba(255,255,255,.72);border-bottom:1px solid rgba(223,229,234,.8);box-shadow:0 8px 32px rgba(28,36,50,.04)}
+.navbar{height:72px;max-width:1380px}
+.logo strong{color:var(--sarge-navy)}
+.logo:after,.nav-links a,.page-title h1{color:var(--sarge-muted)}
+.nav-links a.active,.nav-links a:hover{color:var(--sarge-text)}
+.nav-links a.active:after{background:var(--sarge-blue)}
+.contact,.button{background:var(--sarge-blue);box-shadow:0 8px 22px rgba(22,114,232,.16)}
+.contact:hover,.button:hover{background:#0f66d4;box-shadow:0 10px 26px rgba(22,114,232,.22)}
+.button--light,.button--outline{background:#e9f2ff;color:#155da9;box-shadow:none}
+.page{width:min(1340px,92vw);padding-top:38px}
+.page-title{margin-bottom:24px}
+.page-title .eyebrow{color:var(--sarge-text);font-size:2rem;font-weight:650}
+.credit-card,.report-card,.energy-panel,.pledge-card,.success-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div,.rewards-head>div,.today-flow,.availability{border:1px solid rgba(255,255,255,.78);border-radius:14px;background:var(--sarge-panel);box-shadow:var(--sarge-shadow);backdrop-filter:saturate(170%) blur(22px);-webkit-backdrop-filter:saturate(170%) blur(22px)}
+.credit-card,.report-card,.energy-panel,.pledge-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div,.rewards-head>div,.today-flow{background:rgba(255,255,255,.72)}
+.credit-card>strong,.energy-step strong,.impact-grid strong,.rewards-head strong{color:var(--sarge-navy)}
+.credit-card h3,.report-card h2,.chart-card h2,.reports-toolbar h2,.reward-card h2,.recognition h2{color:var(--sarge-text)}
+.credit-card p,.report-card>p:not(.eyebrow),.chart-summary,.reward-card p,.rewards-section-head p,.recognition p{color:var(--sarge-muted)}
+.credit-card__added{background:#e5f5ee;color:#0b7049;font-weight:600}
+.credit-card .button{background:var(--sarge-navy)}
+.report-icon,.step-index{background:#e9f2ff;color:var(--sarge-blue);box-shadow:none}
+.segmented{background:#e8edf2;border-radius:9px}
+.segmented button{border-radius:7px;color:var(--sarge-muted);font-weight:500}
+.segmented button.active{color:var(--sarge-text);box-shadow:0 2px 8px rgba(20,37,54,.08)}
+.report-placeholder,.report-preview div,.today-flow .pink,.slider-wrap{background:#f7f9fb;border:1px solid var(--sarge-line);box-shadow:none}
+.report-preview .benefit,.reward-card.featured{background:#e9f2ff;border-color:#cfe1f5}
+.energy-step{border-color:var(--sarge-line)}
+.energy-step.contributed{background:#eef8f4;border:1px solid #cee9dd;border-left:4px solid var(--sarge-green);box-shadow:none}
+.energy-step.contributed:after{display:none}
+.availability,.connected{background:#eef8f4;border:1px solid #cee9dd;border-left:4px solid var(--sarge-green);border-radius:10px}
+.availability svg,.connected>svg{background:var(--sarge-green)}
+.choice,.level-track span{border:1px solid var(--sarge-line);border-radius:9px;background:#fff}
+.choice.selected,.level-track .active{border:1px solid #9ec8f3;background:#e9f2ff;color:#155da9}
+.choice svg{background:var(--sarge-blue)}
+.success-mark{background:#e5f5ee;color:var(--sarge-green)}
+.rewards-section,.recognition{border-color:var(--sarge-line)}
+.civic-reward-card,.credit-balance-section>div,.credit-balance-section dl,.badge-levels span{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.78);border-radius:12px;box-shadow:0 10px 32px rgba(30,36,50,.055)}
+.civic-reward-card.available{outline:0;border-color:#9ec8f3;background:#f7fbff}
+.badge-levels span.active{background:var(--sarge-blue);color:#fff}
+.badge-progress i{background:var(--sarge-blue)}
+.impact-grid div{border-top:3px solid var(--sarge-blue)}
+.support-intake,.property-step{background:radial-gradient(circle at 7% 0,rgba(207,225,244,.58),transparent 27rem),var(--sarge-bg)}
+.support-intake__hero-copy,.support-intake__start-card,.support-intake__progress,.support-intake__panel,.property-step__card{border-radius:14px;border-color:rgba(255,255,255,.78);box-shadow:var(--sarge-shadow)}
+.support-intake__field,.support-intake__check-grid label,.support-intake__toggle,.eligibility-step__summary,.eligibility-step__checks label,.data-source-step__details,.pledge-step__metrics article,.pledge-step__control{border-radius:10px;background:#f7f9fb;border-color:var(--sarge-line)}
+.support-intake__primary,.property-step__top-continue,.property-step__check{background:var(--sarge-blue)}
+.support-intake__success-mark,.support-intake__notice{background:#e5f5ee;color:#0b7049;border-color:#cee9dd}
+.property-step__types button,.data-source-card,.verify-step__methods button,.reward-confirm-step__grid button{border-radius:11px;background:#f7f9fb;border-color:var(--sarge-line)}
+.property-step__types button.selected,.data-source-card.selected,.verify-step__methods button.selected,.reward-confirm-step__grid button.selected{border-color:#8dbdee;background:#fff;box-shadow:0 0 0 3px rgba(22,114,232,.09)}
+.property-step__form input,.property-step__form select,.property-step__number,.data-source-step__details input,.data-source-step__details select,.support-intake__field input,.support-intake__field select{border-color:var(--sarge-line);background:#fff}
+@media(max-width:760px){.nav-wrap{padding:0 12px}.navbar{height:62px}.credit-card,.report-card,.energy-panel,.pledge-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div{border-radius:12px}.support-intake__hero-copy,.support-intake__start-card,.support-intake__progress,.support-intake__panel,.property-step__card{border-radius:12px}}
