@@ -680,3 +680,12 @@ body{background:var(--sarge-bg);color:var(--sarge-text)}
 .property-step__types button,.data-source-card{box-shadow:0 5px 16px rgba(30,36,50,.035)}
 .property-step__types button:hover,.data-source-card:hover{transform:translateY(-1px);box-shadow:0 10px 25px rgba(30,36,50,.075)}
 @media(max-width:760px){.landing-hero__content:before{min-height:26px;margin-bottom:12px;padding:0 9px;font-size:.56rem}.landing-hero__content p{line-height:1.42}.landing-hero__actions{margin-top:16px}.landing-hero .button--hero{height:46px}.landing-hero__gong-video{border-width:3px;border-radius:16px}}
+
+/* Keep the desktop welcome copy and video as one balanced row. */
+@media(min-width:761px){
+  .landing-hero__content{top:16%;bottom:16%;height:auto;transform:none;justify-content:center}
+  .landing-hero__content:before{margin-bottom:clamp(10px,1.5vh,18px)}
+  .landing-hero__content h1{font-size:clamp(3.15rem,min(5.15vw,7.1vh),5.45rem)}
+  .landing-hero__content p{margin-top:clamp(12px,2vh,22px);font-size:clamp(.96rem,min(1.18vw,2.05vh),1.18rem);line-height:1.44}
+  .landing-hero__actions{margin-top:clamp(14px,2.4vh,24px)}
+}
