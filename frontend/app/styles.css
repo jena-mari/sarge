@@ -630,3 +630,63 @@ body{background:var(--sarge-bg);color:var(--sarge-text)}
 .property-step__types button.selected,.data-source-card.selected,.verify-step__methods button.selected,.reward-confirm-step__grid button.selected{border-color:#8dbdee;background:#fff;box-shadow:0 0 0 3px rgba(22,114,232,.09)}
 .property-step__form input,.property-step__form select,.property-step__number,.data-source-step__details input,.data-source-step__details select,.support-intake__field input,.support-intake__field select{border-color:var(--sarge-line);background:#fff}
 @media(max-width:760px){.nav-wrap{padding:0 12px}.navbar{height:62px}.credit-card,.report-card,.energy-panel,.pledge-card,.reward-card,.recognition,.chart-card,.reports-toolbar,.impact-grid div{border-radius:12px}.support-intake__hero-copy,.support-intake__start-card,.support-intake__progress,.support-intake__panel,.property-step__card{border-radius:12px}}
+
+/* Wollongong motion panel replaces the family illustration */
+.landing-hero__gong-video{z-index:2;left:auto;right:-2px;top:50%;bottom:auto;width:46%;height:68%;max-width:none;max-height:none;border:6px solid rgba(255,255,255,.94);border-right-width:0;border-radius:28px 0 0 28px;background:#d8e2e5;object-fit:cover;object-position:center;box-shadow:0 18px 50px rgba(20,37,54,.16);transform:translateY(-50%);opacity:1;animation:none;pointer-events:none}
+.landing-hero__content{width:min(47%,680px)}
+@media(max-width:900px){.landing-hero__gong-video{right:-2px;width:48%;height:62%;transform:translateY(-50%)}.landing-hero__content{width:48%}}
+@media(max-width:760px){.landing-hero__content{top:31%;width:auto;transform:translateY(-50%)}.landing-hero__content h1{font-size:clamp(2.9rem,13vw,4rem)}.landing-hero__content p{max-width:92%;font-size:.9rem}.landing-hero__gong-video{left:16px;right:16px;top:auto;bottom:14px;width:calc(100% - 32px);height:35%;border-width:4px;border-radius:18px;transform:none}.landing-hero__actions{margin-top:18px}}
+
+/* Pointer-reactive energy glow */
+.landing-hero{--glow-x:32%;--glow-y:58%;--panel-x:0px;--panel-y:0px}
+.landing-hero:before{content:'';position:absolute;inset:-12%;z-index:-1;pointer-events:none;background:radial-gradient(circle at var(--glow-x) var(--glow-y),rgba(255,255,255,.72) 0,rgba(222,239,255,.38) 20%,transparent 44%),radial-gradient(circle at calc(100% - var(--glow-x)) calc(100% - var(--glow-y)),rgba(22,114,232,.3) 0,rgba(112,176,240,.16) 23%,transparent 48%);filter:blur(10px) saturate(108%);opacity:.9;will-change:background}
+.landing-hero__gong-video{transform:translateY(-50%) translate3d(var(--panel-x),var(--panel-y),0);transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .3s ease}
+.landing-hero:hover .landing-hero__gong-video{box-shadow:0 22px 62px rgba(20,37,54,.2)}
+@media(max-width:900px){.landing-hero__gong-video{transform:translateY(-50%) translate3d(var(--panel-x),var(--panel-y),0)}}
+@media(max-width:760px){.landing-hero:before{inset:-6%;filter:blur(14px);opacity:.62}.landing-hero__gong-video{transform:translate3d(0,0,0)}}
+@media(prefers-reduced-motion:reduce){.landing-hero__gong-video{transition:none}.landing-hero:before{filter:none}}
+
+/* Support welcome artwork and public-facing completion state */
+.support-intake__payload{display:none!important}
+.support-intake__start-card{position:relative;overflow:hidden;padding-top:168px}
+.support-intake__start-card:before{content:'';position:absolute;z-index:0;top:18px;left:22px;right:22px;height:142px;background:url('/assets/figma/sarge-family-figma.png') center bottom/contain no-repeat;opacity:.94;pointer-events:none}
+.support-intake__start-card>*{position:relative;z-index:1}
+@media(max-width:900px){.support-intake__start-card{padding-top:150px}.support-intake__start-card:before{height:126px}}
+@media(max-width:680px){.support-intake__start-card{padding-top:132px}.support-intake__start-card:before{top:14px;height:110px}}
+
+/* Share one alignment edge across welcome copy and action */
+.landing-hero__content{display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.landing-hero__content h1,.landing-hero__content p,.landing-hero__actions{width:100%;margin-left:0;margin-right:0;text-align:left}
+.landing-hero__actions{justify-content:flex-start}
+.landing-hero .button--hero{margin-left:0;margin-right:auto}
+
+/* Give the support family artwork a real hero-scale footprint */
+.support-intake__start-card{--family-art-height:clamp(220px,34vh,340px);padding-top:calc(var(--family-art-height) + 34px)}
+.support-intake__start-card:before{top:22px;left:8%;right:8%;height:var(--family-art-height);background-size:contain;background-position:center center}
+@media(max-width:900px){.support-intake__start-card{--family-art-height:clamp(230px,36vh,360px);padding-top:calc(var(--family-art-height) + 30px)}}
+@media(max-width:680px){.support-intake__start-card{--family-art-height:clamp(210px,32vh,320px);padding-top:calc(var(--family-art-height) + 26px)}.support-intake__start-card:before{top:16px;left:5%;right:5%}}
+
+/* Final onboarding clarity pass */
+.landing-hero__content:before{content:'Wollongong community energy';display:inline-flex;align-items:center;min-height:30px;margin-bottom:18px;padding:0 12px;border:1px solid rgba(255,255,255,.76);border-radius:999px;background:rgba(255,255,255,.48);color:#27445d;font-size:.66rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;box-shadow:0 7px 24px rgba(20,37,54,.06);backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%)}
+.landing-hero__content h1{max-width:650px;text-wrap:balance}
+.landing-hero__content p{max-width:560px;color:#243746;font-weight:400;line-height:1.52}
+.landing-hero__actions{margin-top:24px}
+.landing-hero .button--hero{height:48px;min-width:172px;padding:0 20px;font-size:.94rem;box-shadow:0 9px 24px rgba(22,114,232,.2)}
+.landing-hero__gong-video{border-width:4px;border-right-width:0;border-radius:22px 0 0 22px;box-shadow:0 16px 46px rgba(20,37,54,.13)}
+.landing-hero:hover .landing-hero__gong-video{box-shadow:0 20px 54px rgba(20,37,54,.17)}
+.property-step__card{border-color:rgba(255,255,255,.88);box-shadow:0 16px 46px rgba(30,36,50,.065)}
+.property-step__top{align-items:center}
+.property-step__back,.property-step__top-continue{min-height:38px;box-shadow:0 6px 18px rgba(30,36,50,.055)}
+.property-step__types button,.data-source-card{box-shadow:0 5px 16px rgba(30,36,50,.035)}
+.property-step__types button:hover,.data-source-card:hover{transform:translateY(-1px);box-shadow:0 10px 25px rgba(30,36,50,.075)}
+@media(max-width:760px){.landing-hero__content:before{min-height:26px;margin-bottom:12px;padding:0 9px;font-size:.56rem}.landing-hero__content p{line-height:1.42}.landing-hero__actions{margin-top:16px}.landing-hero .button--hero{height:46px}.landing-hero__gong-video{border-width:3px;border-radius:16px}}
+
+/* Keep the desktop welcome copy and video as one balanced row. */
+@media(min-width:761px){
+  .landing-hero__content{top:16%;bottom:16%;height:auto;transform:none;justify-content:center}
+  .landing-hero__content:before{margin-bottom:clamp(9px,1.3vh,16px);font-size:.72rem}
+  .landing-hero__content h1{font-size:clamp(3.85rem,min(6.3vw,8.2vh),7.2rem);line-height:.91}
+  .landing-hero__content p{margin-top:clamp(11px,1.8vh,20px);font-size:clamp(1.05rem,min(1.35vw,2.25vh),1.32rem);line-height:1.42}
+  .landing-hero__actions{margin-top:clamp(14px,2.4vh,24px)}
+  .landing-hero .button--hero{font-size:1rem}
+}
