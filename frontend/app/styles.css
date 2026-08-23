@@ -645,3 +645,11 @@ body{background:var(--sarge-bg);color:var(--sarge-text)}
 @media(max-width:900px){.landing-hero__gong-video{transform:translateY(-50%) translate3d(var(--panel-x),var(--panel-y),0)}}
 @media(max-width:760px){.landing-hero:before{inset:-6%;filter:blur(14px);opacity:.62}.landing-hero__gong-video{transform:translate3d(0,0,0)}}
 @media(prefers-reduced-motion:reduce){.landing-hero__gong-video{transition:none}.landing-hero:before{filter:none}}
+
+/* Support welcome artwork and public-facing completion state */
+.support-intake__payload{display:none!important}
+.support-intake__start-card{position:relative;overflow:hidden;padding-top:168px}
+.support-intake__start-card:before{content:'';position:absolute;z-index:0;top:18px;left:22px;right:22px;height:142px;background:url('/assets/figma/sarge-family-figma.png') center bottom/contain no-repeat;opacity:.94;pointer-events:none}
+.support-intake__start-card>*{position:relative;z-index:1}
+@media(max-width:900px){.support-intake__start-card{padding-top:150px}.support-intake__start-card:before{height:126px}}
+@media(max-width:680px){.support-intake__start-card{padding-top:132px}.support-intake__start-card:before{top:14px;height:110px}}
