@@ -557,3 +557,14 @@ body{background:#f2f2f3;font-weight:400}.landing-hero{width:calc(100% - 64px);he
 .pledge-step__layout{width:min(1040px,100%)}
 @media(max-width:900px){.landing-hero__content{left:32px;width:58%}.landing-hero__illustration{transform:translateY(-50%)}.property-step__card{justify-content:flex-start}}
 @media(max-width:760px){.landing-hero{width:100%;height:100svh;margin:0;border-radius:0}.landing-hero__nav{top:18px;width:calc(100% - 32px)}.landing-hero__content{left:20px;right:20px;top:46%;width:auto;transform:translateY(-50%)}.landing-hero__illustration{top:auto;bottom:-28px;transform:none}.property-step{padding:8px}.property-step__card{padding:70px 14px 20px}.property-step__top{left:14px;right:14px;top:16px}}
+
+/* Reports: professional civic-energy data palette */
+.chart .recharts-rectangle[name="Generated"]{fill:#27445d!important;stroke:none!important}
+.chart .recharts-rectangle[name="Used"]{fill:#4f8fc9!important;stroke:none!important}
+.chart .recharts-rectangle[name="Contributed"]{fill:#2f9b88!important;stroke:none!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(1) svg path{fill:#27445d!important;stroke:#27445d!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(2) svg path{fill:#4f8fc9!important;stroke:#4f8fc9!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(3) svg path{fill:#2f9b88!important;stroke:#2f9b88!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(1) .recharts-legend-item-text{color:#27445d!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(2) .recharts-legend-item-text{color:#4f8fc9!important}
+.chart .recharts-default-legend .recharts-legend-item:nth-child(3) .recharts-legend-item-text{color:#2f9b88!important}
