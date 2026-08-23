@@ -27,7 +27,6 @@ import {
   deriveAreaDisadvantageFactor,
   deriveNoSolarAccessFactor,
 } from '../src/scoring/deriveHardshipFactors.js';
-import { isHighNeedAreaBySeifa } from '../policies/wollongongEquityDataV2.js';
 
 /**
  * @param {Object} raw
@@ -46,20 +45,20 @@ function buildHousehold(raw) {
     raw.weeklyEnergyCostDollars,
     raw.weeklyIncomeDollars
   );
+  // area_disadvantage and is_high_need_area come from ONE resolved tier
+  // (see deriveAreaDisadvantageFactor's own docstring) — deliberately
+  // not two separate lookups, so they can never disagree about which
+  // real dataset governs this suburb the way an earlier version of this
+  // codebase did for Unanderra.
+  const { factor: areaDisadvantage, is_high_need_area: isHighNeedArea } = deriveAreaDisadvantageFactor(raw.suburb);
   return {
     id: raw.id,
     name: raw.name,
     suburb: raw.suburb,
     life_support_flag: raw.lifeSupportFlag ?? 0,
-    // isHighNeedAreaBySeifa (real ABS SEIFA IRSD 2021 percentile <= 10)
-    // independently reproduces Council's own five named priority
-    // suburbs — see wollongongEquityDataV2.js and its test file for the
-    // cross-validation. Switched from the suburb-name list to this
-    // percentile threshold so the override is driven by a checkable
-    // national statistic, not a hand-maintained list.
-    is_high_need_area: isHighNeedAreaBySeifa(raw.suburb) ? 1 : 0,
+    is_high_need_area: isHighNeedArea ? 1 : 0,
     income_gap: deriveIncomeGapFactor(raw.weeklyIncomeDollars),
-    area_disadvantage: deriveAreaDisadvantageFactor(raw.suburb),
+    area_disadvantage: areaDisadvantage,
     payment_difficulty: derivePaymentDifficultyFactor(raw.currentArrearsDollars),
     energy_burden: energyBurden,
     no_solar_access: deriveNoSolarAccessFactor(raw.hasSolar, raw.suburb),

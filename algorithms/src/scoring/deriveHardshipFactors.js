@@ -35,15 +35,14 @@
  *   typical arrears range ($1,800-$3,500) from one real pilot program
  *   [Assessment p.10] but no formula for turning arrears into a 0-1
  *   score — the linear scaling here is our own choice, not Council's.
- * - area_disadvantage: fully data-backed as of v2 — a real ABS SEIFA
- *   Index of Relative Socio-economic Disadvantage (IRSD) 2021 national
- *   percentile, published per Wollongong suburb by profile.id.com.au
- *   (see `wollongongEquityDataV2.js` for why this supersedes both the
- *   original suburb-list version of this factor and the SA2-level
- *   alternative). Still applied at the suburb level, not the household
- *   level — see the methodology note on the function below for why
- *   that's a deliberate, bounded use of ecological data rather than a
- *   shortcut.
+ * - area_disadvantage: fully data-backed as of v3 — a tiered resolution
+ *   across two real ABS-Census-2021-derived suburb datasets (ABS SEIFA
+ *   by SAL, primary; profile.id's suburb-level SEIFA, fallback), then a
+ *   Wollongong LGA-wide default (see `wollongongEquityDataV3.js` for
+ *   why ABS SAL is checked first). Still applied at the suburb level,
+ *   not the household level — see the methodology note on the function
+ *   below for why that's a deliberate, bounded use of ecological data
+ *   rather than a shortcut.
  * - no_solar_access: derived from real, cited per-suburb solar
  *   installation figures (`wollongongEquityDataV1.js`), applied at the
  *   suburb level for the same bounded-proxy reason as area_disadvantage.
@@ -62,7 +61,7 @@ import {
   LGA_RESIDENTIAL_SOLAR_DENSITY_PCT,
   PRIORITY_SUBURBS,
 } from '../../policies/wollongongEquityDataV1.js';
-import { getSeifaForSuburb } from '../../policies/wollongongEquityDataV2.js';
+import { resolveAreaDisadvantage } from '../../policies/wollongongEquityDataV3.js';
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, value));
@@ -139,45 +138,55 @@ export function derivePaymentDifficultyFactor(currentArrearsDollars) {
 }
 
 /**
- * area_disadvantage, from real ABS SEIFA Index of Relative
- * Socio-economic Disadvantage (IRSD) 2021 percentiles at the
- * individual-suburb ("profile area") level — see
- * `wollongongEquityDataV2.js` for the full citation and for why this
- * supersedes both the earlier suburb-list version of this function and
- * the SA2-level alternative discussed in `system_audit_vs_real_data.md`.
+ * area_disadvantage AND is_high_need_area, from a single tiered
+ * resolution across two real ABS-Census-2021-derived suburb datasets —
+ * see `wollongongEquityDataV3.js` for the full tier order and citation.
+ * Tier 1 (ABS SAL, decile 1-10): `(10 - decile) / 9`. Tier 2/3
+ * (profile.id or LGA-wide default, percentile 1-100): `(100 -
+ * percentile) / 99`. Each tier's own native scale is used rather than
+ * forcing both onto one grain.
  *
- * The factor is simply 1 minus the suburb's published national
- * percentile (0-100 -> 0-1), so a suburb at the 2nd percentile
- * (Warrawong — more disadvantaged than 98% of Australian suburbs)
- * scores 0.98, and a suburb at the 92nd percentile (Cordeaux Heights)
- * scores 0.08. Nothing here is re-derived or re-scaled: the published
- * percentile is used directly, so every score is checkable against the
- * source PDF. A suburb not individually published in the source falls
- * back to the Wollongong City LGA-wide percentile (42), scoring 0.58 —
- * the LGA itself sits slightly below the national median, so an
- * unlisted Wollongong suburb defaults to "slightly more disadvantaged
- * than an average Australian suburb," not to an arbitrary low baseline
- * invented for this project.
+ * Both fields are returned together, from the same resolved tier,
+ * deliberately — deriving them from two separate calls (as an earlier
+ * version of this codebase did: one call for the graded factor, a
+ * different call for the override) let them disagree about which real
+ * dataset "wins" for a given suburb, which is exactly what happened for
+ * Unanderra before this fix (one tier said high-need, the other
+ * didn't). Reading both off one resolution makes that class of bug
+ * structurally impossible.
+ *
+ * A suburb at the 2nd percentile (Warrawong — more disadvantaged than
+ * 98% of Australian suburbs) scores close to 1.0; a suburb at the 92nd
+ * percentile (Cordeaux Heights) scores close to 0.08. Nothing here is
+ * re-derived or re-scaled beyond the tier formula above: the published
+ * decile/percentile is used directly, so every score is checkable
+ * against the same live ABS/profile.id sources.
  *
  * METHODOLOGY NOTE: this remains suburb-level (ecological) data applied
- * to every household in that suburb alike — same bounded-proxy caveat
- * as before, now backed by a real, checkable ABS-sourced number instead
- * of a suburb-list heuristic. It's exactly the kind of area-level proxy
- * the AHP weighting discussion assigned a low-but-nonzero weight to,
+ * to every household in that suburb alike — a deliberate, bounded use
+ * of ecological data. It's exactly the kind of area-level proxy the AHP
+ * weighting discussion assigned a low-but-nonzero weight to,
  * specifically because it can't distinguish a struggling household from
  * a comfortable one on the same street. Don't raise this factor's
  * weight in the hardship policy without also reconsidering that
  * reasoning.
  *
  * @param {string} suburb
- * @returns {number}
+ * @returns {{ factor: number, is_high_need_area: boolean, source: 'ABS SAL' | 'profile.id' | 'LGA-wide default', matchedArea: string, decile: number | null, percentile: number }}
  */
 export function deriveAreaDisadvantageFactor(suburb) {
   if (typeof suburb !== 'string' || suburb.trim() === '') {
     throw new TypeError(`suburb must be a non-empty string, got ${suburb}`);
   }
-  const { percentile } = getSeifaForSuburb(suburb);
-  return clamp01(1 - percentile / 100);
+  const resolved = resolveAreaDisadvantage(suburb);
+  return {
+    factor: clamp01(resolved.area_disadvantage),
+    is_high_need_area: resolved.is_high_need_area,
+    source: resolved.source,
+    matchedArea: resolved.matchedArea,
+    decile: resolved.decile,
+    percentile: resolved.percentile,
+  };
 }
 
 /**

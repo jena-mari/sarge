@@ -99,34 +99,54 @@ describe('derivePaymentDifficultyFactor — scaled against the Save4Good typical
   });
 });
 
-describe('deriveAreaDisadvantageFactor — from real ABS SEIFA IRSD 2021 percentiles, not a suburb list', () => {
-  test('Council-named priority suburbs score high, matching their real (severe) SEIFA percentile', () => {
-    assert.ok(close(deriveAreaDisadvantageFactor('Warrawong'), 0.98));
-    assert.ok(close(deriveAreaDisadvantageFactor('Cringila'), 0.97));
-    assert.ok(close(deriveAreaDisadvantageFactor('Bellambi'), 0.95));
-    assert.ok(close(deriveAreaDisadvantageFactor('Koonawarra'), 0.94));
-    assert.ok(close(deriveAreaDisadvantageFactor('Berkeley'), 0.93));
+describe('deriveAreaDisadvantageFactor — tiered ABS SAL / profile.id / LGA-default resolution', () => {
+  test('returns an object with factor, is_high_need_area, source, matchedArea, decile and percentile', () => {
+    const result = deriveAreaDisadvantageFactor('Warrawong');
+    assert.equal(typeof result.factor, 'number');
+    assert.equal(typeof result.is_high_need_area, 'boolean');
+    assert.equal(result.source, 'ABS SAL');
+    assert.equal(result.matchedArea, 'Warrawong');
+    assert.equal(result.decile, 1);
+    assert.equal(result.percentile, 2);
   });
 
-  test('a well-off suburb scores low, using its own real percentile (not a flat baseline)', () => {
-    assert.ok(close(deriveAreaDisadvantageFactor('Cordeaux Heights'), 0.08));
-    assert.ok(close(deriveAreaDisadvantageFactor('Figtree'), 0.25));
+  test('Council-named priority suburbs plus Unanderra all resolve to the decile-1 ceiling via real ABS SAL data', () => {
+    for (const suburb of ['Warrawong', 'Cringila', 'Bellambi', 'Koonawarra', 'Berkeley', 'Unanderra']) {
+      const result = deriveAreaDisadvantageFactor(suburb);
+      assert.equal(result.factor, 1.0, `${suburb} should be at the decile-1 ceiling`);
+      assert.equal(result.is_high_need_area, true, `${suburb} should be flagged high-need`);
+    }
   });
 
-  test('a suburb not individually published falls back to the Wollongong City LGA percentile (42), not an arbitrary low baseline', () => {
-    assert.ok(close(deriveAreaDisadvantageFactor('Some Suburb Not In The Table'), 0.58));
+  test('the Unanderra fix, at the deriveHardshipFactors boundary: is_high_need_area is true, not false', () => {
+    // Regression test for the exact bug the tiered resolver fixes: an
+    // earlier version of this function (calling wollongongEquityDataV2.js's
+    // getSeifaForSuburb directly) would have scored Unanderra via the
+    // blended "Unanderra - Kembla Grange" profile area (percentile 14,
+    // not high-need). The real, unblended ABS SAL suburb is used now.
+    assert.equal(deriveAreaDisadvantageFactor('Unanderra').is_high_need_area, true);
   });
 
-  test('priority suburbs rank in the same severity order the SEIFA table itself shows', () => {
-    const warrawong = deriveAreaDisadvantageFactor('Warrawong');
-    const cringila = deriveAreaDisadvantageFactor('Cringila');
-    const bellambi = deriveAreaDisadvantageFactor('Bellambi');
-    const koonawarra = deriveAreaDisadvantageFactor('Koonawarra');
-    const berkeley = deriveAreaDisadvantageFactor('Berkeley');
-    assert.ok(warrawong > cringila);
-    assert.ok(cringila > bellambi);
-    assert.ok(bellambi > koonawarra);
-    assert.ok(koonawarra > berkeley);
+  test('a well-off suburb scores low, using its own real decile (not a flat baseline)', () => {
+    assert.equal(deriveAreaDisadvantageFactor('Cordeaux Heights').factor, 0);
+    assert.ok(close(deriveAreaDisadvantageFactor('Figtree').factor, (10 - 8) / 9));
+  });
+
+  test('a suburb absent from both ABS SAL and profile.id falls back to the Wollongong City LGA percentile (42), not an arbitrary low baseline', () => {
+    const result = deriveAreaDisadvantageFactor('Some Suburb Not In Any Table');
+    assert.equal(result.source, 'LGA-wide default');
+    assert.ok(close(result.factor, (100 - 42) / 99));
+  });
+
+  test('area_disadvantage and is_high_need_area always come from the same resolved tier (cannot disagree)', () => {
+    for (const suburb of ['Warrawong', 'Cordeaux Heights', 'Unanderra', 'Nowhere In The Dataset']) {
+      const { source, decile, percentile, is_high_need_area } = deriveAreaDisadvantageFactor(suburb);
+      if (source === 'ABS SAL') {
+        assert.equal(is_high_need_area, decile === 1);
+      } else {
+        assert.equal(is_high_need_area, source !== 'LGA-wide default' && percentile <= 10);
+      }
+    }
   });
 
   test('throws on an empty or non-string suburb', () => {

@@ -82,9 +82,38 @@ describe('explainAllocation — non-overridden household', () => {
     assert.equal(explanation.suburbContext.isCouncilPrioritySuburb, true);
   });
 
+  test('suburbContext.seifa resolves via the tiered ABS SAL / profile.id / LGA-default rule, not the old flat percentile lookup', () => {
+    assert.equal(explanation.suburbContext.seifa.source, 'ABS SAL');
+    assert.equal(explanation.suburbContext.seifa.decile, 1);
+    assert.equal(explanation.suburbContext.seifa.percentile, 5);
+  });
+
+  test('plainLanguageSummary names the SEIFA source tier explicitly', () => {
+    assert.match(explanation.plainLanguageSummary, /via ABS SAL/);
+    assert.match(explanation.plainLanguageSummary, /percentile 5/);
+  });
+
   test('plainLanguageSummary mentions the allocated amount and cap', () => {
     assert.match(explanation.plainLanguageSummary, /5\.25 kWh/);
     assert.match(explanation.plainLanguageSummary, /7\.00 kWh/);
+  });
+});
+
+describe('explainAllocation — suburb with no individual ABS SAL or profile.id entry', () => {
+  test('suburbContext.seifa reports the LGA-wide default, and no SEIFA sentence is added', () => {
+    const priorityWeight = computePriorityWeight(NOT_OVERRIDDEN_HOUSEHOLD, HARDSHIP_POLICY_V1);
+    const explanation = explainAllocation({
+      household: NOT_OVERRIDDEN_HOUSEHOLD,
+      policy: HARDSHIP_POLICY_V1,
+      priorityWeight,
+      tier: 'tier1',
+      allocatedKwh: 5.25,
+      capKwh: 7,
+      suburb: 'Nowhere In Any Dataset',
+      weeklyEnergyBurdenPct: 0.12,
+    });
+    assert.equal(explanation.suburbContext.seifa.source, 'LGA-wide default');
+    assert.doesNotMatch(explanation.plainLanguageSummary, /national SEIFA disadvantage percentile/);
   });
 });
 
